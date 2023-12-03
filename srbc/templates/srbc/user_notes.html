@@ -1,0 +1,85 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+
+{% block title %}
+    Личный кабинет
+{% endblock %}
+{% block navbar_bottom %}{% endblock %}
+{% block css_block %}
+    <link href="{% static 'css/fullcalendar.min.css' %}?v=2019081201" rel="stylesheet"/>
+    <link href="{% static 'css/dashboard_user.min.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block js_block %}
+    <script>
+        var USER_ID = '{{ user.pk }}';
+    </script>
+    <script src="{% static 'js/moment.js' %}"></script>
+    <script src="{% static 'js/fullcalendar.js' %}"></script>
+    {#    <script src="{% static 'js/charts/highstock.js' %}"></script>#}
+    {#    <script src="{% static 'js/charts/plugin.draggable-legend.js' %}"></script>#}
+    <script src="{% static 'js/dashboard_user.min.js' %}?v=2020123112"></script>
+    <script src="{% static 'js/masonry.min.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid">
+        <h5><a href="/dashboard/">Личный кабинет</a></h5>
+        <h2>Персональные рекомендации</h2>
+        <div class="panel panel-default">
+            <ul class="panel-body list-group">
+                {% for note in notes %}
+                    {% if note.label == 'DOC' %}
+                        <li class="list-group-item list-group-item-danger">
+                        <div>
+                        <i class="glyphicons glyphicons-doctor"></i>
+                    {% endif %}
+                {% if note.label == 'WTF' %}
+                    <li class="list-group-item list-group-item-danger">
+                    <div>
+                    <i class="glyphicons glyphicons-stop-sign"></i>
+                {% endif %}
+                {% if note.label == 'IG' %}
+                    <li class="list-group-item list-group-item-success">
+                    <div>
+                    <i class="glyphicons glyphicons-magic"></i>
+                {% endif %}
+                {% if note.label == 'PZDC' %}
+                    <li class="list-group-item list-group-item-success">
+                    <div>
+                    <i class="glyphicons glyphicons-magic"></i>
+                {% endif %}
+                {% if note.label == 'CHAT' %}
+                    <li class="list-group-item list-group-item-info">
+                    <div>
+                    <i class="glyphicons glyphicons-chat"></i>
+                {% endif %}
+                {% if note.label == 'NB' %}
+                    <li class="list-group-item list-group-item-warning">
+                    <div>
+                    <i class="glyphicons glyphicons-exclamation-sign"></i>
+                {% endif %}
+                {% if note.label == 'ORG' %}
+                    <li class="list-group-item list-group-item-warning">
+                    <div>
+                    <i class="glyphicons glyphicons-exclamation-sign"></i>
+                {% endif %}
+                {% if note.label == 'STAT' %}
+                    <li class="list-group-item list-group-item-success">
+                    <div>
+                    <i class="glyphicons glyphicons-charts"></i>
+                {% endif %}
+
+                <b>{{ note.date_added|date:"Y-m-d" }}</b>
+                    </div>
+                    <div>
+                        {{ note.content|safe }}
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}

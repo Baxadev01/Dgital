@@ -1,0 +1,43 @@
+{% extends "srbc/base.html" %}
+{% load static bootstrap %}
+{% block title %}
+    Функции быстрого доступа для команды
+{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <br/>
+  Номер личного кабинета: <input type="text" id="userid">
+  <ul>
+    <li><a target="blank" href="#" onclick="getTariffHistories()">Tariff histories</a>
+    <li>Войти под юзером <a target="blank" href="#" onclick="logInUnder()">==></a>
+    <li><a target="blank" href="/?__logout_under=1">Выйти из-под юзера</a>
+  </ul>
+
+
+  Тест входа по API:
+  <script async src="https://telegram.org/js/telegram-widget.js?22" data-telegram-login="{{ bot_name }}" data-size="medium" data-radius="4" data-auth-url="{{base_url}}/api/v3/auth/telegram" data-request-access="write"></script>
+</div>
+{% endblock %}
+
+{% block js_block %}
+  <script language="JavaScript">
+
+    function openUserLink(addr)
+    {
+      addr += document.getElementById("userid").value;
+      window.open(addr, "_blank");
+      return true
+    }
+    function logInUnder()
+    {
+      return openUserLink("/users/?duty&__login_under=");
+    }
+    function getTariffHistories()
+    {
+      return openUserLink("/admin/crm/tariffhistory/?user__pk__exact=");
+    }
+
+  </script>
+{% endblock %}

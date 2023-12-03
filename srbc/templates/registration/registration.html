@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load bootstrap %}
+{% load static %}
+
+{% block title %}Регистрация в системе{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="login-box">
+            <h1 class="login-logo" style="margin-bottom: 24px;">
+                #SelfRebootCamp
+            </h1>
+            <span style='font-size:20px'>
+                Для создания новой учётной записи используйте любую из кнопок:
+            </span>
+            </br>
+            <a style='font-size:16px'  href="/accounts/login/{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">(У меня уже есть учётная запись, хочу использовать ее)</a>
+            <div class="login-box-body">
+                <div class="mt-5 mb-5 mx-auto">
+                    <script async src="https://telegram.org/js/telegram-widget.js?15" data-telegram-login="selfrebot"
+                            data-size="large" data-auth-url="https://lk.selfreboot.camp/complete/telegram"
+                            data-request-access="write"></script>
+                </div>
+                {% comment %} <a class="btn btn-lg btn-huge btn-social btn-github btn-block center-m border"
+                               style="margin-bottom: 24px;"
+                               href="/social/register/apple-id/{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">
+                                <i class="fab fa-apple"></i> Sign in with Apple
+                </a> {% endcomment %}
+                <a class="btn btn-lg btn-huge btn-social btn-microsoft btn-block center-m"
+                               style="margin-bottom: 24px;"
+                               href="/social/register/google-oauth2/{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">
+                                <i class="fab fa-google"></i> Sign in with Google
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

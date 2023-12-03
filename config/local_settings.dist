@@ -1,0 +1,226 @@
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.celery import CeleryIntegration
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = '#FIXME#'
+
+ALLOWED_HOSTS = ['#FIXME#']
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
+
+# Database
+# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': '#FIXME#',
+        'USER': '#FIXME#',
+        'PASSWORD': '#FIXME#',
+        'HOST': '#FIXME#',
+        'PORT': '#FIXME#',
+    }
+}
+
+SOCIAL_AUTH_INSTAGRAM_KEY = '#FIXME#'
+SOCIAL_AUTH_INSTAGRAM_SECRET = '#FIXME#'
+
+SOCIAL_AUTH_JAWBONE_KEY = '#FIXME#'
+SOCIAL_AUTH_JAWBONE_SECRET = '#FIXME#'
+
+SOCIAL_AUTH_FACEBOOK_KEY = '#FIXME#'
+SOCIAL_AUTH_FACEBOOK_SECRET = '#FIXME#'
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '#FIXME#'
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '#FIXME#'
+
+FIELDS_STORED_IN_SESSION = ['auth']
+
+DJANGO_TELEGRAMBOT = {
+
+    'MODE': 'POLLING',
+    'IS_PRODUCTION': False,
+
+    # (Optional [str]) # The default value is WEBHOOK,
+    # otherwise you may use 'POLLING'
+    # NB: if use polling you must provide to run
+    # a management command that starts a worker
+
+    # TODO в дисте не было, актуально?
+    'WEBHOOK_SITE': 'https://lk.selfreboot.camp',
+
+    'WEBHOOK_PREFIX': 'tgbot_endpoint',  # (Optional[str]) # If this value is specified,
+    # a prefix is added to webhook url
+
+    # 'WEBHOOK_CERTIFICATE' : 'cert.pem', # If your site use self-signed
+    # certificate, must be set with location of your public key
+    # certificate.(More info at https://core.telegram.org/bots/self-signed )
+
+    'BOTS': [
+        {
+
+            'TOKEN': '#FIXME#',
+            'SLUG': '#FIXME#',
+        },
+    ],
+}
+
+# в секундах
+DJANGO_TELEGRAMBOT_QUESTION_TIMEOUT = 120
+
+CELERY_TASK_ALWAYS_EAGER = False
+
+CELERY_BROKER_URL = 'amqp://localhost'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/5'
+
+SITE_ID = 1
+
+#вынес сюда, у меня было, в дисте нет, тоже нужно ли и актуальней тут или в сетиингах?
+MIFIT_SETTINGS = {
+    'apptoken': '',
+    'login_token': '',
+    'app_name': 'com.xiaomi.hm.health',
+
+    'guid': '954C6A21-E638-403C-8EB4-353B93DBCBD5',
+    'uid': 3011850871,
+    'cv': '45_3.0.2',
+    'v': '2.0',
+    'useragent': 'MiFit/3.0.2 (iPad; iOS 10.3; Scale/2.00)',
+}
+
+#вынес сюда, у меня было, в дисте нет, тоже нужно ли и актуальней тут или в сетиингах?
+TG_CHANNEL_ID = '#FIXME#'
+
+MAILCHIMP_USERNAME = '#FIXME#'
+MAILCHIMP_API_KEY = '#FIXME#'
+
+MAILCHIMP_LIST_ID = '#FIXME#'
+
+MAILCHIMP_COMMUNICATION_GROUP_IDS = {
+    'CHANNEL': '#FIXME#',
+    'CHAT': '#FIXME#',
+}
+
+MAILCHIMP_TEST_STATUS = {
+    'DONE': '#FIXME#',
+    'PASSED': '#FIXME#',
+    'FAILED': '#FIXME#',
+    'ACCEPTED': '#FIXME#',
+    'REJECTED': '#FIXME#',
+}
+
+LOGGING = {
+    'version': 1,
+    # 'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'propagate': True,
+            'level': 'DEBUG',
+        },
+
+        'IMAGES_API': {
+            'handlers': ['console'],
+            'propagate': True,
+            'level': 'DEBUG',
+        },
+        'django.db.backends': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+        },
+    }
+}
+
+YANDEX_MONEY_SHOP_ID = 0
+YANDEX_MONEY_SHOP_PASSWORD = '#FIXME#'
+YANDEX_MONEY_RETURN_URL = '#FIXME#'
+RUSSIAN_PAYMENT_ALLOWED_METHODS = {
+    'BANK_CARD': 'bank_card',
+    'YOO_MONEY': 'yoo_money',
+}
+
+PAYPAL_BUSINESS_EMAIL = '#FIXME#'
+
+STRIPE_SECRET_KEY = '#FIXME#'
+STRIPE_PUBLIC_KEY = '#FIXME#'
+STRIPE_WEBHOOK_KEY = '#FIXME#'
+
+AWS_ACCESS_KEY_ID = '#FIXME#'
+AWS_SECRET_ACCESS_KEY = '#FIXME#'
+AWS_STORAGE_BUCKET_NAME = '#FIXME#'
+AWS_S3_ENDPOINT_URL = '#FIXME#'
+
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+
+# Sentry
+sentry_sdk.init(
+    dsn='',
+    integrations=[DjangoIntegration(), CeleryIntegration()],
+    # If you wish to associate users to errors (assuming you are using
+    # django.contrib.auth) you may enable sending PII data.
+    send_default_pii=True
+)
+
+SYSTEM_USER_ID = '#FIXME#'
+
+SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
+
+RECAPTCHA_PUBLIC_KEY = ''
+RECAPTCHA_PRIVATE_KEY = ''
+
+SESSION_COOKIE_DOMAIN = '.selfreboot.camp'
+SESSION_COOKIE_NAME = 'srbc_sandbox_sessionid'
+
+CHATBOT_NOTIFICATION_GROUP_ID = '#FIXME#'
+CHATBOT_STAFF_GROUP_ID = '#FIXME#'
+
+# slug тарифа в нашей бд, на который пользователи оформляют подписки (пока он один)
+STRIPE_DEFAULT_TARIFF = '#FIXME#'
+
+# список slug'ов тарифов для показа при оформлении заявки
+NEWBIE_SELECTION_WAVE_TARIFFS = [
+    '#FIXME#'
+]
+
+# список slug'ов тарифов - подписок
+ACTIVE_SUBSCRIPTION_TARIFFS = [
+    '#FIXME#'
+]
+
+# словарь вида slug : [список slug'ов] - показывает какой тариф в какой может быть проапгрейжен
+SUBSCRIPTION_UPGRADE_ABILITY = {
+    '#FIXME#'
+}
+
+SUBSCRIPTION_SIDEGRADE_ABILITY = [
+    '#FIXME#'
+]
+
+
+#slug для базового тарифа (если оплатили и запись в будущем, для активности пользователя)
+BASE_TARIFF = '#FIXME#'
+
+#slug для фейк тарифа "из прошлого" (если у пользоватея уже были активные ТХ, связанные с ведением дневника и истекли)
+FALLBACK_TARIFF = '#FIXME#'
+
+# минимальный билд приложения
+ACTUAL_MOBILE_BUILD = '#FIXME#'
+
+# Prodamus config
+PRODAMUS_SECRET_KEY = '#FIXME#'
+PRODAMUS_DOMAIN_PAYMENT_PAGE = '#FIXME#'

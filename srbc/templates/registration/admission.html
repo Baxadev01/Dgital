@@ -1,0 +1,455 @@
+{% extends 'base.html' %}
+{% load bootstrap %}
+{% load static %}
+
+{% block title %}Вступительное тестирование{% endblock %}
+
+{% block css_block %}
+    <style type="text/css">
+
+        #question_form .form-group {
+            display: none;
+        }
+
+    </style>
+{% endblock %}
+
+{% block js_block %}
+    <script language="JavaScript" type="application/javascript">
+        $("#id_answer_ok").click(function () {
+            if ($(this).is(':checked')) {
+                $("#id_answer_ok_comment").closest(".form-group").show();
+            } else {
+                $("#id_answer_ok_comment").closest(".form-group").hide();
+            }
+        });
+        $("#id_answer_interval").click(function () {
+            if ($(this).is(':checked')) {
+                $("#id_answer_interval_comment").closest(".form-group").show();
+            } else {
+                $("#id_answer_interval_comment").closest(".form-group").hide();
+            }
+        });
+        $("#id_answer_sweet").click(function () {
+            if ($(this).is(':checked')) {
+                $("#id_answer_sweet_comment").closest(".form-group").show();
+            } else {
+                $("#id_answer_sweet_comment").closest(".form-group").hide();
+            }
+        });
+        $("#id_answer_protein").click(function () {
+            if ($(this).is(':checked')) {
+                $("#id_answer_protein_comment").closest(".form-group").show();
+            } else {
+                $("#id_answer_protein_comment").closest(".form-group").hide();
+            }
+        });
+        $("#id_answer_carb").click(function () {
+            if ($(this).is(':checked')) {
+                $("#id_answer_carb_comment").closest(".form-group").show();
+            } else {
+                $("#id_answer_carb_comment").closest(".form-group").hide();
+            }
+        });
+        $("#id_answer_fat").click(function () {
+            if ($(this).is(':checked')) {
+                $("#id_answer_fat_comment").closest(".form-group").show();
+            } else {
+                $("#id_answer_fat_comment").closest(".form-group").hide();
+            }
+        });
+        $("#id_answer_weight").click(function () {
+            if ($(this).is(':checked')) {
+                $("#id_answer_weight_comment").closest(".form-group").show();
+            } else {
+                $("#id_answer_weight_comment").closest(".form-group").hide();
+            }
+        });
+
+        function load_quiz_form() {
+            $("#id_answer_ok").closest(".form-group").show();
+
+            if ($("#id_answer_ok").is(':checked')) {
+                $("#id_answer_ok_comment").closest(".form-group").show();
+            } else {
+                $("#id_answer_ok_comment").closest(".form-group").hide();
+            }
+
+            $("#id_answer_interval").closest(".form-group").show();
+
+            if ($("#id_answer_interval").is(':checked')) {
+                $("#id_answer_interval_comment").closest(".form-group").show();
+            } else {
+                $("#id_answer_interval_comment").closest(".form-group").hide();
+            }
+
+            $("#id_answer_sweet").closest(".form-group").show();
+
+            if ($("#id_answer_sweet").is(':checked')) {
+                $("#id_answer_sweet_comment").closest(".form-group").show();
+            } else {
+                $("#id_answer_sweet_comment").closest(".form-group").hide();
+            }
+
+            $("#id_answer_protein").closest(".form-group").show();
+
+            if ($("#id_answer_protein").is(':checked')) {
+                $("#id_answer_protein_comment").closest(".form-group").show();
+            } else {
+                $("#id_answer_protein_comment").closest(".form-group").hide();
+            }
+
+
+            $("#id_answer_carb").closest(".form-group").show();
+            if ($("#id_answer_carb").is(':checked')) {
+                $("#id_answer_carb_comment").closest(".form-group").show();
+            } else {
+                $("#id_answer_carb_comment").closest(".form-group").hide();
+            }
+
+            $("#id_answer_fat").closest(".form-group").show();
+            if ($("#id_answer_fat").is(':checked')) {
+                $("#id_answer_fat_comment").closest(".form-group").show();
+            } else {
+                $("#id_answer_fat_comment").closest(".form-group").hide();
+            }
+
+            $("#id_answer_weight").closest(".form-group").show();
+            if ($("#id_answer_weight").is(':checked')) {
+                $("#id_answer_weight_comment").closest(".form-group").show();
+            } else {
+                $("#id_answer_weight_comment").closest(".form-group").hide();
+            }
+        }
+
+        $(function () {
+            load_quiz_form();
+        })
+    </script>
+{% endblock %}
+
+
+{% block content %}
+    <div class="container-fluid">
+        {% include "blocks/progress_bar.html" %}
+        <h2 class="login-logo">
+            Вступительное тестирование
+        </h2>
+        {% if admission_test.status in test_statuses_pending %}
+            <h4>
+                Тест завершен, спасибо.
+            </h4>
+            <h5>
+                Мы известим Вас о результатах через электронного помощника в течение нескольких дней.
+            </h5>
+        {% endif %}
+
+        {% if admission_test.status == 'ACCEPTED' %}
+            <h4>
+                Поздравляем, вы прошли тест!
+            </h4>
+            <p>
+                Очень разумный разбор вариантов (он не на 100% совпал с нашим шаблоном, но, как мы и писали,
+                важнее ход рассуждений, чем угаданный верный вариант).
+            </p>
+            <p>
+                Вопрос сформулирован в соответствии с правилами. Ответы на вопросы теста не входят в протокол
+                проверки:
+                вопросы можно и нужно задавать в канале в процессе участия в проекте.
+            </p>
+            <p>
+                Следующий шаг - оплата. Через некоторое время в личном кабинете откроется возможность оплаты.
+                Пожалуйста, проверяйте периодически страницу <a
+                    href="/payment/">https://lk.selfreboot.camp/payment/</a>
+                – оплата будет открыта без дополнительного уведомления.
+            </p>
+        {% endif %}
+        {% if admission_test.status == 'REJECTED' %}
+            {% if user.application.social_acc_status == 'REJECTED' or user.application.social_acc_status == 'SUSPICIOUS' %}
+                <h4>
+                    К сожалению, ваш аккаунт в Facebook не прошел ручную проверку.
+                </h4>
+                <div>
+                    Вы успешно прошли тестирование, но мы не смогли верифицировать Ваш фб-аккаунт по одной из
+                    причин
+                    ниже:
+                    <ul>
+                        <li>Вы указали некорректную ссылку;</li>
+                        <li>Вы указали ссылку на аккаунт в другой соцсети;</li>
+                        <li>Вы указали ссылку на фейковый аккаунт;</li>
+                        <li>Настройки Вашего аккаунта не позволяют нам идентифицировать вас как реального
+                            человека.
+                        </li>
+                    </ul>
+                    Во всех этих случаях мы не можем зачислить Вас в проект.
+
+                    <div class="panel panel-warning">
+                        <div class="panel-heading">
+
+                            <p>
+                                Если Вы хотите принять участие в старте 03.08.2018, вам необходимо написать в
+                                личные
+                                сообщения <a href="https://facebook.com/selfrebootcamp">страницы selfrebootcamp
+                                в
+                                Facebook</a> при помощи аккаунта, использованного для логина на нашем сайте и
+                                сообщить
+                                свой ID (он указан в личном кабинете).
+                            </p>
+
+                            <p>
+                                После идентификации аккаунта как реального возможность оплаты участия будет
+                                включена.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <h4>
+                    К сожалению, по результатам теста вам требуется больше информирования, чем мы можем дать
+                    участникам
+                    заочной программы.
+                </h4>
+                <div>
+                    <p>
+                        Возможно также, что мы не можем обеспечить вам достижение заявленных целей или чувствуем
+                        себя не
+                        соответствующими вашим ожиданиям.
+                    </p>
+                    <p>
+
+                        Мы совершенствуем программу и разрабатываем способы, которые дали бы вам необходимый
+                        минимум
+                        умений ориентироваться в рационах. В заочной группе это обязательно нужно для
+                        полноценного и
+                        эффективного участия.
+                    </p>
+                    <p>
+                        Пока мы работаем над этим, вы можете подождать и попробовать более внимательно
+                        разобраться с
+                        рационами, используя реальные рационы участников в инстаграме по тегу
+                        #selfrebootcampЕДА.
+                        Теперь
+                        у вас есть схема питания и пункты, требующие особого внимания (те самые категории ошибок
+                        в
+                        тесте).
+                    </p>
+                    <p>
+                        Мы будем рады видеть вас в наших следующих стартах или в очной группе. Мы обязательно
+                        придумаем,
+                        как решить проблему, с которой сталкиваются многие кандидаты в заочную группу.
+                    </p>
+                </div>
+            {% endif %}
+        {% endif %}
+        {% if admission_test.status == 'IN_PROGRESS' %}
+            {% if user.application.campaign.is_admission_open %}
+                {% if part == 'T' or part == 'Q' %}
+                    <ul class="nav nav-pills">
+                        <li class="disabled"><a>План тестирования:</a></li>
+                        {% if current_question.question_num == 1 %}
+                            <li role="presentation" class="active">
+                                <a>Рацион 1</a>
+                            </li>
+                        {% else %}
+                            <li role="presentation">
+                                <a href="./?part=T&q=1">Рацион 1</a>
+                            </li>
+                        {% endif %}
+                        {% if current_question.question_num == 2 %}
+                            <li role="presentation" class="active">
+                                <a>Рацион 2</a>
+                            </li>
+                        {% else %}
+                            <li role="presentation">
+                                <a href="./?part=T&q=2">Рацион 2</a>
+                            </li>
+                        {% endif %}
+                        {% if current_question.question_num == 3 %}
+                            <li role="presentation" class="active">
+                                <a>Рацион 3</a>
+                            </li>
+                        {% else %}
+                            <li role="presentation">
+                                <a href="./?part=T&q=3">Рацион 3</a>
+                            </li>
+                        {% endif %}
+                        {% if current_question.question_num == 4 %}
+                            <li role="presentation" class="active">
+                                <a>Рацион 4</a>
+                            </li>
+                        {% else %}
+                            <li role="presentation">
+                                <a href="./?part=T&q=4">Рацион 4</a>
+                            </li>
+                        {% endif %}
+                        {% if part == 'Q' %}
+                            <li role="presentation" class="active">
+                                <a>Ваш вопрос</a>
+                            </li>
+                        {% else %}
+                            <li role="presentation">
+                                <a href="./?part=Q">Ваш вопрос</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                {% endif %}
+                {% if part == 'T' %}
+                    <h3>
+                        Анализ рационов на соответствие методичке
+                    </h3>
+
+                    <div class="well">
+                        <p>
+                            Самое важное умение, которое дает проект - умение понимать, что именно лежит перед вами
+                            в
+                            тарелке, и как съеденное скажется на вашем организме.
+                            Биохимические эффекты разных видов еды мы подробно рассказываем на лекциях участникам
+                            проекта, но первые недели новички приводят свой рацион в соответствие методичке.
+                            Ваша задача - проанализировать, насколько рацион в задании соответствует нашей системе.
+
+                        </p>
+                        <button type="button" class="btn btn-primary btn-xs" data-toggle="modal"
+                                data-target="#mealRules">
+                            <i class="glyphicons glyphicons-article"></i>&nbsp;Правила составления рациона
+                        </button>
+
+                    </div>
+
+                    <div class="modal fade" id="mealRules" tabindex="-1" role="dialog" aria-labelledby="mealRulesLabel">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                                        <span aria-hidden="true">&times;</span></button>
+                                    <h4 class="modal-title" id="mealRulesLabel">Правила составления рациона</h4>
+                                </div>
+                                <div class="modal-body">
+                                    Идеальный рацион полностью соответствует этой схеме:
+                                    <ul>
+                                        <li>
+                                            <strong>Завтрак</strong>: 100 граммов продукта-источника белка
+                                            (далее называем такой продукт просто "белок"), 100 граммов овощей, 100
+                                            граммов сложных углеводов, 25-50 граммов хлеба.
+                                        </li>
+                                        <li>
+                                            <strong>Второй завтрак</strong>: 100 граммов белка, 200 граммов фруктов.
+                                        </li>
+                                        <li>
+                                            <strong>Обед</strong>: 100 граммов белка, 200 граммов овощей, 25-50 граммов
+                                            хлеба.
+                                        </li>
+                                        <li>
+                                            <strong>Полдник</strong>: 200 граммов фруктов или 30-60 граммов сухофруктов
+                                        </li>
+                                        <li>
+                                            <strong>Ужин</strong>: 100 граммов белка, 200 граммов овощей, 25-50 граммов
+                                            хлеба.
+                                        </li>
+                                        <li>
+                                            <strong>Дополнительно</strong> возможна (не обязательна) порция кефира до
+                                            200 граммов между ужином и сном.
+                                        </li>
+                                    </ul>
+                                    <em>
+                                        Источником белка считаем продукт с содержанием белка не ниже 11%.<br>
+                                        Сложные углеводы &ndash; каши, макароны и другие источники длинных цепочек
+                                        крахмала.
+                                    </em>
+                                    <img src="/media/markdownx/a10fad5b-0eeb-4893-8cc3-bdbbcd0b2e6c.jpg"
+                                         style="margin-top: 16px; margin-bottom: 16px; margin-left: auto; margin-right: auto;"/>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4>Вопрос {{ current_question.question_num }} из {{ questions_count }}</h4>
+                        Проанализируйте предоставленный рацион, отметьте <strong>все</strong> замеченные вами отклонения
+                        от методички и <strong>прокомментируйте каждый</strong> из выбранных вариантов ответа
+                        <div class="well">
+                            {{ current_question.text|safe }}
+                        </div>
+                    </div>
+                    <form method="post" id="question_form">
+                        {% csrf_token %}
+                        {{ form|bootstrap }}
+
+                        <button class="btn btn-primary pull-left" type="submit">
+                            <i class="glyphicons glyphicons-check"></i> Ответить и продолжить
+                        </button>
+                        <br/><br/>
+                    </form>
+                {% elif part == 'Q' %}
+                    <h3>
+                        Последнее задание теста
+                    </h3>
+                    <div class="well">
+                        <p>
+                            Пожалуйста, в этом поле напишите нам о том, почему вы решили принять участие в
+                            selfrebootcamp.
+                        </p>
+                        <p>
+                            Если число заявок на участие будет превышать количество мест, мы используем эту информацию
+                            для принятия решения.
+                        </p>
+                    </div>
+                    <form method="post" id="user_question_form">
+                        {% csrf_token %}
+                        {{ form|bootstrap }}
+                        {% if unanswered_questions %}
+                            <div class="panel panel-danger">
+                                <div class="panel-heading">
+                                    <h4>У вас еще есть неотвеченные вопросы теста.</h4>
+                                    <p>Нажав "Завершить тестирование", вы уже не сможете на них ответить.</p>
+                                </div>
+                            </div>
+
+                        {% endif %}
+                        <button class="btn btn-primary pull-left" type="submit">
+                            <i class="glyphicons glyphicons-check"></i> Завершить тестирование
+                        </button>
+
+                    </form>
+                {% elif part == 'R' %}
+                    Напишите нам про рекоммендации.
+                {% endif %}
+                {% if part == 'B' %}
+                    <h4>
+                        Время тестирования истекло
+                    </h4>
+                    <h5>
+                        К сожалению, мы не можем больше принимать тесты для участия в этом потоке.
+                        <br/>
+                        Вы можете <a href="/tariff/">изменить свою заявку</a> и либо пройти тестирование в одном из
+                        следющих
+                        потоков, либо перейти в текущем потоке на очный режим участия.
+                    </h5>
+                {% endif %}
+            {% else %}
+                <h4>
+                    Тестирование в данный момент недоступно
+                </h4>
+                {% if user.application.campaign.admission_status == 'NOT_STARTED' %}
+                    <p>
+                        Тестирование для вашего потока открывается
+                        {{ user.application.campaign.admission_start_date|date:"d E" }}.<br/>
+                        Пожалуйста, учтите, что тестирование продлится всего одну неделю.
+                    </p>
+                {% endif %}
+                {% if user.application.campaign.admission_status == 'ENDED' %}
+                    <p>
+                        Тестирование для вашего потока закончилось
+                        {{ user.application.campaign.admission_end_date|date:"d E" }}.<br/>
+                        К сожалению, мы не можем больше принимать тесты для участия в этом потоке.<br/>
+                        Вы можете <a href="/tariff/">изменить свою заявку</a> и либо пройти тестирование в одном из
+                        следющих
+                        потоков, либо перейти в текущем потоке на очный режим участия.
+                    </p>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}
+

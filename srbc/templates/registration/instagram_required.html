@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load bootstrap %}
+{% load static %}
+
+{% block title %}Нужен Instagram{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        {#        {% include "blocks/progress_bar.html" %}#}
+        <h2 class="login-logo">
+            Подключение Instagram-аккаунта
+        </h2>
+        <p>
+            Участники проекта загружают все данные в личный кабинет. Но для личного пользования вы можете также создать
+            Instagram-аккаунт и загружать все данные еще и в Instagram. Это позволит вам сохранить историю участия даже
+            после завершения.
+        </p>
+        <p>
+            Кроме того, после первых восьми недель соблюдающие протокол участники, чьи рационы могут
+            быть эталоном, могут перейти на промо-тариф - в этом случае ведение Instagram становится обязательным.
+        </p>
+        <div class="panel panel-danger">
+            <div class="panel-heading bg-danger text-danger">
+                <p>
+                    Если вы не хотите непрошеных гостей в вашем аккаунте, используемом в проекте (а вы скорее всего не
+                    хотите), скопируйте ссылку и откройте её
+                    <strong>в новой вкладке браузера В РЕЖИМЕ ИНКОГНИТО.</strong>
+                </p>
+            </div>
+        </div>
+        <div class="login-box form-group-lg text-center">
+            <input class="form-control"
+                   value="https://lk.selfreboot.camp/instagram/{{ user.profile.instagram_link_code }}/"
+                   onclick="$(this).select();"
+                   style="margin-top: 8px"
+            />
+        </div>
+        <div class="panel panel-info">
+            <div class="panel-heading bg-info text-info">
+                <p>
+                    Если вам всё равно, кто увидит ваш инстаграм, используемый в проекте selfrebootcamp,
+                    и ваши фотографии в нём, просто нажмите кнопку
+                </p>
+            </div>
+        </div>
+        <div class="login-box">
+            <a href="/instagram/"
+               class="btn btn-info btn-lg btn-block">
+                <i class="social social-instagram"></i> Подключить Instagram
+            </a>
+
+        </div>
+
+    </div>
+{% endblock %}
+

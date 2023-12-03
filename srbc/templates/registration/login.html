@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load bootstrap %}
+{% load static %}
+
+{% block title %}Вход в систему{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="login-box">
+            <h1 class="login-logo" style="margin-bottom: 24px;">
+              ВХОД В ЛИЧНЫЙ КАБИНЕТ SELFREBOOTCAMP
+            </h1>
+            <span style='font-size:20px; text-transform:uppercase'>
+                <a href="/accounts/registration/{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">(У меня нет учётной записи, хочу создать новую)</a>
+            </span>
+            </br>
+            <span style='font-size:16px'>
+              Если у вас уже есть учётная запись, используйте способ, с которым вы входили раньше:
+            </span>
+            <div class="login-box-body">
+                <div class="mt-5 mb-5 mx-auto">
+                    <script async src="https://telegram.org/js/telegram-widget.js?15" data-telegram-login="{{ bot_name }}"
+                            data-size="large" data-radius="4"  data-auth-url="{{base_url}}/complete/telegram?auth=login" {# ????? #}
+                            data-request-access="write"></script>
+                </div>
+                <a class="btn btn-lg btn-huge btn-social btn-github btn-block center-m border"
+                               style="margin-bottom: 24px;"
+                               href="/social/register/apple-id/?auth=login{% if request.GET.next %}&next={{ request.GET.next }}{% endif %}">
+                                <i class="fab fa-apple"></i> Sign in with Apple
+                </a>
+                <a class="btn btn-lg btn-huge btn-social btn-microsoft btn-block center-m"
+                               style="margin-bottom: 24px;"
+                               href="/social/register/google-oauth2/?auth=login{% if request.GET.next %}&next={{ request.GET.next }}{% endif %}">
+                                <i class="fab fa-google"></i> Sign in with Google
+                </a>
+
+                {% comment %} <a href="https://lk.selfreboot.camp/articles/authorization/">Как войти в личный кабинет?</a> {% endcomment %}
+
+
+                {% if 'fb' in request.GET %}
+                    <a class="btn btn-lg btn-huge btn-social btn-facebook btn-block"
+                       style="margin-bottom: 24px;"
+                       href="/social/register/facebook/{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">
+                        <i class="fab fa-facebook"></i> Войти при помощи FaceBook
+                    </a>
+                {% endif %}
+                {% if 'staff' in request.GET %}
+                    <div class="text-center small"
+                         style="margin-bottom: 12px;">
+                        ИЛИ
+                    </div>
+                    <div class="text-center h4">
+                        <a href="#" class="btn btn-lg btn-default btn-social btn-block"
+                           onclick="document.getElementById('login_form').style.display='block'; this.style.display='none'; return false;">
+                            <i class="glyphicons glyphicons-keys"></i>&nbsp;Войти при помощи пароля
+                        </a>
+
+                    </div>
+
+                    <form method="post" id="login_form" style="display: none;">
+                        {% csrf_token %}
+                        {{ form|bootstrap }}
+                        <button class="btn btn-primary pull-left" type="submit">
+                            <i class="glyphicons glyphicons-keys"></i> Вход с паролем
+                        </button>
+                        {#                    <a href="/login/facebook/{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}"#}
+                        {#                       class="btn btn-success pull-right" type="submit">#}
+                        {#                        <i class="social social-facebook"></i> Вход через FaceBook#}
+                        {#                    </a>#}
+                        <!--<a href="/login/jawbone/" class="btn btn-success pull-right" type="submit">-->
+                        <!--<i class="social social-jawbone"></i> Вход через JawBone-->
+                        <!--</a>-->
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

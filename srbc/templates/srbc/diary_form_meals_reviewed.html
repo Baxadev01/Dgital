@@ -1,0 +1,516 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+
+
+{% block title %}Рацион{% endblock %}
+{% block navbar_bottom %}{% endblock %}
+{% block css_block %}
+    <link href="{% static 'css/diary_form_meals.min.css' %}?v=20191101" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'js/moment.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery-3.2.1.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery-ui.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-animate.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-sanitize.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-touch.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ui-bootstrap.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ng-file-upload.min.js' %}?v=2019062103"></script>
+
+    <script type="text/javascript"
+            src="{% static 'apps/diary_form_meals/app.module.min.js' %}?v=2022022412"></script>
+
+    <script type="text/javascript" src="{% static 'apps/shared/meal/mealDirective.min.js' %}?v=2020123112"></script>
+    <script type="text/javascript"
+            src="{% static 'apps/shared/meal_datetime/mealDateTimeDirective.min.js' %}?v=2019112401"></script>
+    <script type="text/javascript" src="{% static 'apps/shared/stopclick/stopclickDirective.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ng-sticky.min.js' %}"></script>
+
+    <style type="text/css">
+        .short-view {
+            width:100%;
+        }
+
+        .short-view tr td {
+            text-align: center;
+            padding:8px;
+        }
+
+        .short-view tr td:first-child {
+            text-align: center;
+            border-right: 1px solid #dee2e6!important;
+            padding:8px;
+            width:30%;
+        }
+
+        .short-view tr:not(:first-child) {
+            border-top: 1px solid #dee2e6!important;
+            width:70%;
+        }
+
+        .full-view {
+            width:100%;
+        }
+
+        .full-view tbody tr td {
+            text-align: center;
+            padding:8px;
+            width:28%;
+        }
+
+        .full-view thead tr th {
+            text-align: center;
+            padding-bottom: 4px;
+            padding: 8px 8px 8px 20px;
+        }
+
+        .full-view tbody tr td:first-child {
+            width:16%;
+        }
+
+        .full-view thead tr{
+            line-height:25px;
+        }
+
+        .full-view tbody tr{
+            border-top: 1px solid #dee2e6!important;
+        }
+
+        .full-view tbody tr td:first-child {
+            text-align: left;
+            margin-left: 2px;
+        }
+
+        .full-view tbody tr td:not(:last-child) {
+            border-right: 1px solid #dee2e6!important;
+        }
+
+        .full-view thead tr th:not(:last-child) {
+            border-right: 1px solid #dee2e6!important;
+        }
+
+        .meals-table-legend-row {
+            display: flex;
+            height: 45px;
+            width: 250px;
+        }
+
+        .meals-table-legend-icon {
+            width: 15px;
+            vertical-align: middle;
+        }
+
+        .meals-table-legend-icon-two-icons {
+            display: inline-flex
+        }
+
+        .legend-icon-second-in-row {
+            margin-left: 5px;
+        }
+
+        .meals-table-legend-comment {
+            margin-left: 25px;
+            display: inline-block;
+            font-size: 11px;
+            width: 180px;
+            overflow: hidden;
+            vertical-align: middle;
+            margin-top: 10px;
+        }
+
+        .second-icon {
+            margin-left: -10px;
+        }
+
+        .two-icons {
+            margin-left: 5px;
+        }
+
+        .bar-img {
+            max-width: 40px;
+        }
+
+        .bar-img-with-text {
+            position: relative;
+        }
+
+        .bar-img-text {
+            width: 14px;
+            margin-top: -31px;
+            margin-left: 16px;
+            font-weight: bold;
+        }
+
+        .bar-img-legend {
+            max-height: 30px;
+        }
+
+        .second-in-row {
+            margin-left: 10px;
+        }
+    </style>
+
+{% endblock %}
+
+{% block js_block %}
+    <script>
+        $("#meals-table-legend").popover(
+            {
+                "content": function () {
+                    var legend = [];
+                    legend.push("<div class='meals-table-legend-row'><div class='meals-table-legend-icon'><img class='bar-img-legend' src='/static/icons/need_and_ate.svg'></div><div class='meals-table-legend-comment'>достаточное количество</div></div>");
+                    legend.push("<div class='meals-table-legend-row'><div class='meals-table-legend-icon'><img class='bar-img-legend' src='/static/icons/need_but_ate_less.svg'></div><div class='meals-table-legend-comment'>недостаточное количество</div></div>");
+                    legend.push("<div class='meals-table-legend-row'><div class='meals-table-legend-icon'><img class='bar-img-legend' src='/static/icons/need_but_ate_more.svg'></div><div class='meals-table-legend-comment'>избыточное количество</div></div>");
+                    legend.push("<div class='meals-table-legend-row'><div class='meals-table-legend-icon'><img class='bar-img-legend' src='/static/icons/need_but_not_ate.svg'></div><div class='meals-table-legend-comment'>компонент отсутствует</div></div>");
+                    legend.push("<div class='meals-table-legend-row'><div class='meals-table-legend-icon'><img class='bar-img-legend' src='/static/icons/not_need_but_ate.svg'></div><div class='meals-table-legend-comment'>излишний компонент</div></div>");
+                    legend.push("<div class='meals-table-legend-row'><div class='meals-table-legend-icon meals-table-legend-icon-two-icons'><img class='bar-img-legend' src='/static/icons/need_but_ate_less.svg'> <img class='bar-img-legend legend-icon-second-in-row' src='/static/icons/need_but_ate_more.svg'> </div><div class='meals-table-legend-comment'>дисбаланс по времени</div></div>");
+                    legend.push("<div class='meals-table-legend-row'><div class='meals-table-legend-icon'><img class='bar-img-legend' src='/static/icons/extra-1.svg'></div><div class='meals-table-legend-comment'>экстра порция</div></div>"); 
+                    return legend.join("");
+                },
+                "html": true,
+                "placement": "bottom",
+                "title": "Условные&nbsp;обозначения",
+            }
+        ); 
+    </script>
+
+    {{ profile_serialized|json_script:"data-profile-serialized" }}
+    {{ meal_recommendations|json_script:"data-meal-recommendations" }}
+    <script>
+        var TODAY = '{{ today|date:"Y-m-d" }}';
+        var START_DATE = '{{ user.profile.wave.start_date|date:"d.m.Y" }}';
+        var CURRENT_DATE = '{{ today|date:"d.m.Y" }}';
+        var SRBC_USER = JSON.parse(document.getElementById('data-profile-serialized').textContent);
+        var MEAL_RECOMMENDATIONS = JSON.parse(document.getElementById('data-meal-recommendations').textContent);
+    </script>
+{% endblock %}
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid app-container ng-cloak" ng-app="srbcApp" ng-controller="RootCtrl">
+        <div ng-include="'{% static 'apps/shared/topmenu/alerts.html' %}'"></div>
+        <div class="panel panel-default ">
+            <div class="panel-heading">
+                <div class="panel-title">
+                    <h2>
+                        Рацион / <a href="../data/" style="font-size: 22px;">Данные</a>
+                    </h2>
+                </div>
+            </div>
+            <div class="panel-body col-md-6 col-xs-12">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="form-group form-group-lg">
+                            <div class="input-group">
+                                <div class="input-group-btn">
+                                    <a class="btn btn-lg btn-primary"
+                                       href="/diary/{{ yesterday|date:"Y-m-d" }}/meals/">
+                                        <i class="glyphicons glyphicons-arrow-left"></i>
+                                    </a>
+                                </div>
+                                <input class="form-control text-center" readonly
+                                       value="Рацион за {{ yesterday|date:"d.m.Y" }}"
+                                       id="collage-date" jqdatepicker
+                                       style="font-weight: bold;"/>
+                                <div class="input-group-btn">
+                                    {% if tomorrow %}
+                                        <a class="btn btn-lg btn-primary"
+                                           href="/diary/{{ tomorrow|date:"Y-m-d" }}/meals/">
+                                            <i class="glyphicons glyphicons-arrow-right"></i>
+                                        </a>
+                                    {% else %}
+                                        <a class="btn btn-lg btn-default">
+                                            <i class="glyphicons glyphicons-arrow-right"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 8px;">
+                    <div class="col-xs-12" ng-show="$root.is_locked">
+                        <button class="btn btn-lg btn-block"
+                                ng-class="{'btn-success': !$root.is_fake, 'btn-blame': $root.is_fake}"
+                                ng-click="ig_text_show = !ig_text_show">
+                            <i class="glyphicons glyphicons-article"></i> Показать описание
+                        </button>
+                    </div>
+                    <div class="col-xs-12" ng-if="day_data.meals_formula" style="margin-top: 8px;">
+                        <div class="panel panel-default" style="margin-bottom: 0;">
+                            <div class="panel-heading">
+{#                                <div><strong>Полноценность рациона:</strong> {$ day_data.meals_percent $}%</div>#}
+                                <div ng-if="day_data.faulted_pers_reqs.length" >
+                                    <strong>Не выполнены персональные рекомендации:</strong> {$ day_data.faulted_pers_reqs $}
+                                </div>
+                                <div><strong>Совершено жиронакопительных действий:</strong> {$ day_data.faults $}</div>
+                                <div ng-if="day_data.is_overcalory">
+                                    <strong>Дополнительные продукты:</strong>&nbsp;☑️
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-12" ng-if="ig_text_show" style="margin-top: 8px;">
+                        <textarea class="form-control" ng-model="ig_text" rows="8"></textarea>
+                    </div>
+                    <div class="col-xs-12" ng-show="summary_stat" style="margin-top: 10px;">
+                        <ul class="list-group">
+                            <li class="list-group-item" style="background-color: #d9edf7; padding-right: 3px;">
+                                Баланс рациона
+                                <div style="float:right; margin-top: -8px; display: inline-block;">
+                                    <label class="btn btn-primary" ng-model="display_mode"
+                                            uib-btn-radio="'short'"
+                                            ng-click="setSummaryDisplayMode('short')">
+                                        <i class="glyphicons glyphicons-note"></i>
+                                    </label>
+                                    <label class="btn btn-primary" ng-model="display_mode"
+                                            uib-btn-radio="'full'"
+                                            ng-click="setSummaryDisplayMode('full')">
+                                        <i class="glyphicons glyphicons-table"></i>
+                                    </label>
+                                    <label class="btn btn-primary btn-info"
+                                        id="meals-table-legend"
+                                        data-toggle="popover" data-trigger="click">
+                                        <i class="glyphicons glyphicons-question-sign"></i>
+                                    </label>
+                                </div>
+                            </li>
+                            <li style="position: relative; overflow: hidden; padding: 0;"
+                                class="list-group-item" >
+                                
+                                <div class="col-xs-12" ng-show="summary_display_mode=='short'" style="margin-top: 1px; padding: 0">
+                                    <div class="panel panel-default" style="margin-bottom: 0;">
+                                        <div class="panel-heading">
+                                            <table class="short-view">
+                                                <tr>
+                                                    <td>
+                                                        <img src="{% static 'icons/Protein.png' %}" title="продукты - источники белка" />
+                                                    </td>
+                                                    <td ng-show="summary_stat.day_stat.PROTEIN == 'IMBALANCE'"> 
+                                                            <div style="margin-left: auto; margin-right: auto"> 
+                                                                <img class="bar-img" ng-src="/static/icons/need_but_ate_less.svg">
+                                                                <img class="bar-img second-in-row" ng-src="/static/icons/need_but_ate_more.svg">
+                                                            </div>
+                                                    </td>
+                                                    <td ng-show="summary_stat.day_stat.PROTEIN != 'IMBALANCE'"> 
+                                                        <img class="bar-img" ng-src="/static/icons/{$ get_diary_component_status_icon(summary_stat.day_stat.PROTEIN)$}.svg">
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <img src="{% static 'icons/Vegetables.png' %}"  title="овощи, фрукты и другие источники клетчатки" />
+                                                    </td>
+                                                    <td ng-show="summary_stat.day_stat.FIBER == 'IMBALANCE'"> 
+                                                        <div style="margin-left: auto; margin-right: auto"> 
+                                                            <img class="bar-img" ng-src="/static/icons/need_but_ate_less.svg">
+                                                            <img class="bar-img second-in-row" ng-src="/static/icons/need_but_ate_more.svg">
+                                                        </div>
+                                                    </td>
+                                                    <td ng-show="summary_stat.day_stat.FIBER != 'IMBALANCE'"> 
+                                                        <img class="bar-img" ng-src="/static/icons/{$ get_diary_component_status_icon(summary_stat.day_stat.FIBER)$}.svg">
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>
+                                                        <img src="{% static 'icons/Dry_ugl.png' %}" title="продукты-источники крахмала" />
+                                                    </td>
+                                                    <td ng-show="summary_stat.day_stat.STARCH == 'IMBALANCE'"> 
+                                                        <div style="margin-left: auto; margin-right: auto"> 
+                                                            <img class="bar-img" ng-src="/static/icons/need_but_ate_less.svg">
+                                                            <img class="bar-img second-in-row" ng-src="/static/icons/need_but_ate_more.svg">
+                                                        </div>
+                                                    </td>
+                                                    <td ng-show="summary_stat.day_stat.STARCH != 'IMBALANCE'"> 
+                                                        <img class="bar-img" ng-src="/static/icons/{$ get_diary_component_status_icon(summary_stat.day_stat.STARCH)$}.svg">
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-xs-12" ng-show="summary_display_mode=='full'" style="margin-top: 1px; padding: 0">
+                                    <div class="panel panel-default" style="margin-bottom: 0;">
+                                        <div class="panel-heading">
+                                            <table class="full-view"> 
+                                                <thead>
+                                                    <tr>
+                                                        <th class="text-center">
+                                                            &nbsp;
+                                                        </th>
+                                                        <th class="text-center">
+                                                            <img src="{% static 'icons/Protein.png' %}" title="продукты - источники белка"  />
+                                                        </th>
+                                                        <th class="text-center">
+                                                            <img src="{% static 'icons/Vegetables.png' %}" title="овощи, фрукты и другие источники клетчатки" />
+                                                        </th>
+                                                        <th class="text-center">
+                                                            <img src="{% static 'icons/Dry_ugl.png' %}" title="продукты-источники крахмала" />
+                                                        </th>
+                                                        <th class="text-center">
+                                                            Extra
+                                                        </th>
+                                                    </tr>     
+                                                </thead>
+                                                <tbody>
+                                                    <tr ng-repeat="key in $root.stat_order">
+                                                        <td>
+                                                            <div>{$ $root.mealTypesDict[key] $}</div>
+                                                            <div><span class="label label-primary" style="display:block; max-width:45px" ng-if="summary_stat.containers[key].MEALS.length"
+                                                                    ng-repeat="time in summary_stat.containers[key].MEALS">{$ time $}</span></div>
+                                                            <div><span class="label label-danger" ng-if="!summary_stat.containers[key].MEALS.length">--:--</span></div>
+                                                        </td>
+                                                        <td>
+                                                            <img class="bar-img" ng-src="/static/icons/{$ get_meal_component_status_icon(summary_stat.containers[key].PROTEIN.status)$}.svg">
+                                                        </td>
+                                                        <td>
+                                                            <img class="bar-img" ng-src="/static/icons/{$ get_meal_component_status_icon(summary_stat.containers[key].FIBER.status)$}.svg">
+                                                        </td>
+                                                        <td>
+                                                            <img class="bar-img" ng-src="/static/icons/{$ get_meal_component_status_icon(summary_stat.containers[key].STARCH.status)$}.svg">
+                                                        </td>
+                                                        <td>
+                                                            <div style="margin-bottom: -28px;" ng-if="summary_stat.containers[key].EXTRA.components.length > 0">
+                                                                <div ng-if="summary_stat.containers[key].EXTRA.quant_amount > 5" >
+                                                                    <img class="bar-img bar-img-with-text" ng-src="/static/icons/extra-6.svg">
+                                                                    <p class="bar-img-text"> 
+                                                                        {$ summary_stat.containers[key].EXTRA.quant_amount $}
+                                                                    </p>
+                                                                </div>
+                                                                <div ng-if="summary_stat.containers[key].EXTRA.quant_amount <= 5">
+                                                                    <img class="bar-img" ng-src="/static/icons/extra-{$ summary_stat.containers[key].EXTRA.quant_amount$}.svg">
+                                                                </div>
+                                                            </div>    
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>                 
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    <div>           
+                </div>
+                <div class="row">
+                    <div class="col-xs-12" ng-show="day_data.faults_data.length">
+                        <div class="panel panel-danger" style="margin-bottom: 12px">
+                            <div class="panel-heading">
+                                <div class="label meal-notice label-info"
+                                     ng-repeat="(key, fault) in day_data.faults_data">
+                                    <span ng-hide="fault.comment.length">{$ $root.errorTypes[fault.type].title $}</span>
+                                    <span ng-show="fault.comment.length"
+                                          style="white-space: pre-wrap; word-wrap: break-word;"
+                                          ng-bind-html="fault.comment"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="day_faults_list" class="col-xs-12" ng-show="$root.faults_list.length">
+                        <ul class="list-group">
+                            <li class="list-group-item list-group-item-danger">
+                                Список совершенных жиронакопительных действий
+                            </li>
+                            <li style="position: relative"
+                                class="list-group-item meal-fault" ng-repeat="(key, fault) in $root.faults_list">
+                                {$ fault.fault.title $}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="row" id="meals_container">
+                    <div class="col-xs-12">
+                        <div class="panel panel-success"
+                             style="margin-bottom: 12px;">
+                            <div class="panel-heading">
+                                <div class="row">
+                                    <div class="col-xs-5 column">
+                                        <div class="input-group">
+                                            <span class="input-group-addon"><i class="glyphicons glyphicons-clock"></i></span>
+                                            <meal-date-time datetime="day_data.wakeup_time"></meal-date-time>
+                                        </div>
+                                    </div>
+                                    <div class="panel-title col-xs-7 column meal-title">
+                                        Подъём
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <readonly-meal ng-repeat="meal in meals" obj="meal"></readonly-meal>
+                    <div class="col-xs-12">
+                        <div class="panel panel-success"
+                             style="margin-bottom: 12px;">
+                            <div class="panel-heading">
+                                <div class="row">
+                                    <div class="col-xs-5 column">
+                                        <div class="input-group">
+                                            <span class="input-group-addon"><i class="glyphicons glyphicons-clock"></i></span>
+                                            <meal-date-time datetime="day_data.bed_time"
+                                                            aftermidnight=day_data.bed_time_is_next_day></meal-date-time>
+                                        </div>
+                                    </div>
+                                    <div class="panel-title col-xs-7 column meal-title">
+                                        Отбой
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-12">
+                        <div class="panel" ng-class="{'panel-info': water_ok(), 'panel-warning': !water_ok()}"
+                             style="margin-bottom: 12px;">
+                            <div class="panel-heading">
+                                <div class="row">
+                                    <div class="col-xs-5 column">
+                                        <div class="input-group">
+                                        <span class="input-group-addon"
+                                              style="font-size: x-large; overflow: hidden; margin-bottom: 0; padding: 0; padding-left: 6px; padding-right: 8px;">
+                                            🚰
+                                        </span>
+                                            <input type="number" step="0.2" class="form-control meal-time"
+                                                   ng-model="day_data.water_consumed"
+                                                   readonly
+                                            />
+                                            <span class="input-group-addon">л</span>
+
+                                        </div>
+                                    </div>
+                                    <div class="panel-title col-xs-3 column meal-title">
+                                        Вода
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-12">
+                        <div class="panel panel-default" style="margin-bottom: 12px;">
+                            <div class="panel-heading">
+                                <div class="row">
+                                    <div class="col-sm-8 col-xs-12">
+                                        <div class="thumbnail" ng-if="meal_image.image">
+                                            <img id="meal_image_preview" ng-src="{$ meal_image.image $}" height="200"/>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-4 panel-title column meal-title">Фото рациона</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="row" ng-hide="$root.is_fake || !$root.is_locked">
+                    <div class="col-xs-12">
+                        <button class="btn btn-blame btn-block" ng-click="blameMeal()" style="white-space: normal;">
+                            <i class="glyphicons glyphicons-ban-circle"></i>&nbsp;
+                            Аварийная кнопка! Не нажимать!
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}

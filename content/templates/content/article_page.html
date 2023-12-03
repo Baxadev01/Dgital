@@ -1,0 +1,75 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+{% load bootstrap3 %}
+
+{% block title %}{{ article.title }}{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+{% block css_block %}
+    <link href="{% static 'css/videojs.min.css' %}?v=20180502140000" rel="stylesheet"/>
+    <link href="{% static 'css/videojs-qualityselector.min.css' %}?v=20180502140000" rel="stylesheet"/>
+
+{% endblock %}
+{% block js_block %}
+    <script type="text/javascript" src="{% static 'js/video.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/videojs-qualityselector.min.js' %}"></script>
+    {% if article.has_video %}
+        <script>
+            var player = videojs('#article-video');
+
+            player.qualityselector({
+                sources: [
+                    {
+                        format: 'hd720',
+                        src: '{{ article.video_src.hd|safe }}',
+                        type: 'video/mp4'
+                    },
+                    {
+                        format: 'medium',
+                        src: '{{ article.video_src.md|safe }}',
+                        type: 'video/mp4'
+                    },
+                    {
+                        format: 'small',
+                        src: '{{ article.video_src.sd|safe }}',
+                        type: 'video/mp4'
+                    },
+                ],
+                formats: [
+                    {code: 'hd720', name: '720p'},
+                    {code: 'medium', name: '480p'},
+                    {code: 'small', name: '360p'}
+                ]
+            });
+        </script>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    <style>
+        #article img,
+        #article image {
+        / / width: auto;
+        / / height: 100 %;
+            max-height: 400px;
+            max-width: 100%;
+        }
+    </style>
+    <!-- Page Content -->
+    <div class="container-fluid">
+        <div class="container">
+            <h5><a href="../">Статьи и руководства</a></h5>
+            <h2>{{ article.title }}</h2>
+            {% if article.has_video %}
+                <video id="article-video" class="video-js vjs-default-skin vjs-big-play-centered" controls
+                       style="margin-bottom: 32px; width: 100% !important;">
+                    <source src="{{ article.video_src.md|safe }}" type='video/mp4'>
+                </video>
+            {% endif %}
+            <div id="article">
+                {{ article.text|safe }}
+            </div>
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}

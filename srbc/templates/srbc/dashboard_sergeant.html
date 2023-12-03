@@ -1,0 +1,92 @@
+{% extends "srbc/base.html" %}
+
+{% block title %}
+#SelfRebootCamp – панель технокотика
+{% endblock %}
+{% block navbar_bottom %}{% endblock %}
+{% block content %}
+<!-- Page Content -->
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-6">
+            <img src="/static/images/ig_food_smpl.jpg" class="img-thumbnail"/>
+        </div>
+        <div class="col-md-6">
+            <div class="panel panel-primary">
+                <div class="panel-body form-horizontal">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <div class="input-group-addon"><i class="social social-instagram"></i></div>
+                            <input class="form-control form-control-static" value="rumantick_reboot" disabled/>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <div class="input-group-addon"><i class="glyphicons glyphicons-calendar"></i></div>
+                            <input class="form-control form-control-static" value="21 мая" disabled/>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="panel panel-default">
+                            <div class="panel-body">
+                                Подъём - 7:50<br/>
+                                9:50 - вермишель, молоко<br/>
+                                11:15 - яйцо, хлеб, ветчина, черри<br/>
+                                12:50 - творог, протеин, хлеб<br/>
+                                14:50 - хлеб, индея, овощи<br/>
+                                16:30 - остаток обеда<br/>
+                                18:05 - хлеб, котлета, овощи<br/>
+                                <br/>
+                                <b>#selfrebootcamp</b> <b>#selfrebootcampеда</b> <b>#selfrebootcampидеальныйвес</b>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="panel panel-info">
+                <div class="panel-body form-horizontal">
+
+                    <div class="form-group form-group-sm">
+                        <label class="col-sm-2 col-xs-6">Формула</label>
+                        <div class="col-sm-4 col-xs-6">
+                            <div class="input-group">
+                                <input type="text" class="form-control"/>
+                                <div class="input-group-addon">/</div>
+                                <input type="text" class="form-control"/>
+                            </div>
+                        </div>
+                        <div class="checkbox col-sm-6">
+                            <label>
+                                <input type="checkbox"/>
+                                Дополнительные продукты
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group form-group-sm">
+                        <label>Комментарий</label>
+                        <textarea rows="4" class="form-control"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+<!-- /.container -->
+{% endblock %}
+
+{% block js_block %}
+<script type="text/javascript" src="/static/js/angular/angular.js"></script>
+<script type="text/javascript" src="/static/js/angular/angular-animate.js"></script>
+<script type="text/javascript" src="/static/js/angular/angular-sanitize.js"></script>
+<script type="text/javascript" src="/static/js/angular/angular-touch.js"></script>
+<script type="text/javascript" src="/static/js/angular/ui-bootstrap.min.js"></script>
+
+<script type="text/javascript" src="/static/apps/techcat_dashboard/app.module.js"></script>
+
+<script type="text/javascript" src="/static/apps/shared/stopclick/stopclickDirective.js"></script>
+{% endblock %}

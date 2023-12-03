@@ -1,0 +1,159 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+{% block title %}
+    Профиль участника @{{ profile_user.username }}
+{% endblock %}
+
+{% block css_block %}
+    <link href="{% static 'css/jquery-ui.min.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block js_block %}
+{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid">
+        <div class="row">
+            <div id="srbc_user_data" class="col-xs-12">
+                <div class="text-center {{ rr.user.profile.header_class }}">
+                    <!-- @formatter:off -->
+        <h3>{% if rr.user.profile.is_perfect_weight %}<i
+                class="glyphicons glyphicons-certificate" title="Идеальный вес"
+        ></i>&nbsp;{% endif %}{% if rr.user.profile.is_pregnant %}<i
+                class="glyphicons glyphicons-stroller" title="Особый случай"
+        ></i>&nbsp;{% endif %}@{{ rr.user.username }}<span
+                class="small">({{ rr.user.profile.wave.title }}) #{{ rr.user.pk }}</span> </h3>
+        <!-- @formatter:on -->
+                </div>
+
+            </div>
+
+        </div>
+        <div class="row">
+            <div class="col-xs-12 col-md-6">
+                <form method="post">
+                    <div class="panel panel-{% if rr.request_type == 'POSITIVE' %}info{% else %}warning{% endif %}">
+                        <div class="panel-heading">
+                            {{ rr.get_request_type_display }}
+                        </div>
+                        <div class="panel-body">
+                            <strong>Отзыв</strong>:
+                            {{ rr.comment|linebreaksbr }}
+                        </div>
+                        <div class="panel-body">
+                            <strong>Комментарий модератора</strong>:
+                            <textarea class="form-control">{{ rr.comment_internal }}</textarea>
+                        </div>
+                        <div class="panel-footer text-right">
+                            <input type="hidden" name="action" value="save_internal_comment"/>
+                            <input type="submit" value="Сохранить" class="btn btn-primary"/>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="col-xs-12 col-md-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        Статистика
+                    </div>
+                    <div class="panel-body">
+                        <div class="col-md-6">
+                            <strong>Данные</strong>:
+                            <ul>
+                                <li>
+                                    <strong>За всё время:</strong>
+                                    {{ stat_data.data_count_total }} / {{ stat_data.days_count }}
+                                </li>
+                                <li>
+                                    <strong>За 2 недели:</strong>
+                                    ({{ stat_data.data_count_2w }} / 14)
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>ЖНД</strong>:
+                            <ul>
+                                <li>
+                                    <strong>За всё время:</strong>
+                                    {{ stat_data.faa_days_count_total }} / {{ stat_data.meals_count_total }}
+                                    ({{ stat_data.faa_count_total }})
+                                </li>
+                                <li>
+                                    <strong>За 2 недели:</strong>
+                                    {{ stat_data.faa_days_count_2w }} / {{ stat_data.meals_count_2w }}
+                                    ({{ stat_data.faa_count_2w }})
+                                </li>
+                            </ul>
+
+                        </div>
+                        <div class="panel-body">
+                            <div class="col-xs-12">
+                                <strong>Последние замеры</strong>:
+                            </div>
+                        </div>
+                        <div class="panel-body">
+                            <div class="col-xs-12">
+                                <strong>Последние контрольные фото</strong>:
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12 col-md-6">
+                <h3>Заметки</h3>
+                <div class="panel panel-default">
+                    <ul class="panel-body list-group">
+                        {% for note in notes %}
+                            {% if note.label == 'DOC' %}
+                                <li class="list-group-item list-group-item-danger">
+                                <i class="glyphicons glyphicons-doctor"></i>
+                            {% endif %}
+                        {% if note.label == 'IG' %}
+                            <li class="list-group-item list-group-item-success">
+                            <i class="glyphicons glyphicons-magic"></i>
+                        {% endif %}
+                        {% if note.label == 'PZDC' %}
+                            <li class="list-group-item list-group-item-success">
+                            <i class="glyphicons glyphicons-magic"></i>
+                        {% endif %}
+                        {% if note.label == 'CHAT' %}
+                            <li class="list-group-item list-group-item-info">
+                            <i class="glyphicons glyphicons-chat"></i>
+                        {% endif %}
+                        {% if note.label == 'NB' %}
+                            <li class="list-group-item list-group-item-warning">
+                            <i class="glyphicons glyphicons-exclamation-sign"></i>
+                        {% endif %}
+                        {% if note.label == 'ORG' %}
+                            <li class="list-group-item list-group-item-warning">
+                            <i class="glyphicons glyphicons-exclamation-sign"></i>
+                        {% endif %}
+                        {% if note.label == 'STAT' %}
+                            <li class="list-group-item list-group-item-success">
+                            <i class="glyphicons glyphicons-charts"></i>
+                        {% endif %}
+                        <b>{{ note.date_added|date:"Y-m-d" }}</b> by
+                        <b>{{ note.author.username }}</b>
+                        {% if note.is_published %}
+                            <span class="label label-success"><span
+                                    class="glyphicons glyphicons-eye-open"></span> Участнику</span>
+                        {% else %}
+                            <span class="label label-danger"><span
+                                    class="glyphicons glyphicons-eye-close"></span> Комсоставу</span>
+                        {% endif %}
+                        <div>
+                            {{ note.content|safe }}
+                        </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}

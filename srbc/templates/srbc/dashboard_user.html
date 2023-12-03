@@ -1,0 +1,540 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+
+{% block title %}
+    Личный кабинет
+{% endblock %}
+{% block navbar_bottom %}{% endblock %}
+{% block css_block %}
+    <link href="{% static 'css/highcharts.min.css' %}?v=2019030101" rel="stylesheet"/>
+
+    <link href="{% static 'css/fullcalendar.min.css' %}?v=2019081201" rel="stylesheet"/>
+    <link href="{% static 'css/dashboard_user.min.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block js_block %}
+    <script src="{% static 'js/charts/highstock.js' %}?v=7.0.3"></script>
+    <script src="{% static 'js/charts/plugin.draggable-legend.js' %}"></script>
+    <script>
+        var USER_ID = '{{ user.pk }}';
+    </script>
+    <script src="{% static 'js/moment.js' %}"></script>
+    <script src="{% static 'js/fullcalendar.js' %}"></script>
+    <script src="{% static 'js/dashboard_user.min.js' %}?v=2020123112"></script>
+    <script src="{% static 'js/masonry.min.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <!-- Page Content -->
+    <script>
+        var WIDGETS = {};
+    </script>
+    <div class="container-fluid">
+        <div id="alerts-container" class="fixed">
+            {#            {% if not instagram_linked %}#}
+            {#                <div class="alert alert-danger" role="alert">#}
+            {#                    <span class="social social-instagram" aria-hidden="true"></span>#}
+            {#                    <span class="sr-only">Внимание:</span>#}
+            {#                    Нет подключенного аккаунта Instagram. <a href="/instagram/">Подключить?</a>#}
+            {#                </div>#}
+            {#            {% endif %}#}
+            {% if user.profile.telegram_id %}
+                {% if chat_to_join %}
+                    <div class="alert alert-success" role="alert">
+                        <span class="glyphicons glyphicons-chat" aria-hidden="true"></span>
+                        <span class="sr-only">Внимание:</span>
+                        В Telegram доступен новый
+                        {% if chat_to_join.chat.chat_type == 'CHAT' %}чат{% else %}канал{% endif %}
+                        проекта selfrebootcamp:
+                        {% if chat_to_join.chat.title %}{{ chat_to_join.chat.title }}{% endif %}
+                        [{{ chat_to_join.chat.code }}].
+                        <a href="#" id="chat_join_link" data-chat="{{ chat_to_join.chat.pk }}">
+                            Получить ссылку от бота
+                        </a>
+                    </div>
+                {% endif %}
+            {% endif %}
+            {% if checkpoint_required %}
+                <div class="alert alert-warning" role="alert">
+                    <span class="glyphicons glyphicons-camera" aria-hidden="true"></span>
+                    <span class="sr-only">Внимание:</span>
+                    {#                    {% if last_checkpoint_photos_date %}#}
+                    {#                        Последние контрольные фотографии от {{ last_checkpoint_photos_date|date:"d E" }}.#}
+                    {#                        Необходимо <a href="/photos/">загрузить</a> актуальные контрольные фотографии.#}
+                    {#                    {% else %}#}
+                    Необходимо <a href="/photos/">загрузить</a> стартовые фотографии. Инструкция по фотографированию
+                    доступна <a href="/articles/photos/" target="_blank">по ссылке</a>.
+                    {#                    {% endif %}#}
+                    {% if last_rejected_checkpoint %}
+                        Предыдущие загруженные фотографии не соответствуют
+                        <a href="/articles/photos/">правилам</a>:
+                        <ul>
+                            {% for reason in last_rejected_checkpoint.rejection_reasons_display %}
+                                <li>
+                                    {{ reason }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        {% if last_rejected_checkpoint.rejection_comment %}
+                            <br/>
+                            <p>
+                                {{ last_rejected_checkpoint.rejection_comment }}
+                            </p>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% elif collage_required %}
+                <div class="alert alert-warning" role="alert">
+                    <span class="glyphicons glyphicons-camera" aria-hidden="true"></span>
+                    <span class="sr-only">Внимание:</span>
+                    Последние контрольные фотографии (от {{ last_checkpoint_photos_date|date:"d E" }}) загружены в
+                    систему и готовы <a href="/checkpoints/photos/">к созданию коллажа</a>.
+                    Пожалуйста, выполните этот шаг.
+                    Видео-инструкция по сборке коллажей доступна <a href="/articles/checkpoint_collage/"
+                                                                    target="_blank">по ссылке</a>.
+                </div>
+            {% endif %}
+            {% if payment_required %}
+                <div class="alert alert-warning" role="alert">
+                    <span class="glyphicons glyphicons-money" aria-hidden="true"></span>
+                    <span class="sr-only">Внимание:</span>
+                    До окончания оплаченного периода осталось меньше двух недель.
+                    <a href="/payment/">Продлить участие.</a>
+                </div>
+            {% endif %}
+            {% if renewal_required %}
+                <div class="alert alert-warning" role="alert">
+                    <span class="glyphicons glyphicons-calendar" aria-hidden="true"></span>
+                    <span class="sr-only">Внимание:</span>
+                    Дата окончания вашего участия в проекте – {{ user.profile.valid_until|date:"d.m.Y" }}.
+                    Необходимо уведомить команду проекта о дальнейших намерениях (продолжении или не-продолжении)
+                    по протоколу, находящемуся в чате/канале.
+                </div>
+            {% endif %}
+            {% if unfilled_checkpoint_exists %}
+                <div class="alert alert-warning" role="alert">
+                    <span class="glyphicon glyphicon-calendar" aria-hidden="true"></span>
+                    <span class="sr-only">Внимание:</span>
+                    У вас есть незаполненные контрольные замеры.
+                    <a href="/checkpoints/measurements/">Заполнить.</a>
+                </div>
+            {% endif %}
+            {#            {% if need_to_create_checkpoint %}#}
+            {#                <div class="alert alert-warning" role="alert">#}
+            {#                    <span class="glyphicons glyphicon-calendar" aria-hidden="true"></span>#}
+            {#                    <span class="sr-only">Внимание:</span>#}
+            {#                    У вас нет контрольных замеров за последние 2 недели.#}
+            {#                    <a href="/checkpoints/measurements/">Заполнить.</a>#}
+            {#                </div>#}
+            {#            {% endif %}#}
+        </div>
+
+        <div class="row" id="dashboard-container">
+            {% if today < user.profile.wave.start_date %}
+                <div class="grid-item col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                    <h1 class="text-center">Добро пожаловать в #SelfRebootCamp</h1>
+                    <h4 class="text-center">Старт Вашего потока в проекте: {{ user.profile.wave.start_date }}</h4>
+                    <p>Уважаемый участник, приветствуем вас на старте.</p>
+                    <p>Мы напоминаем, что от участника канала требуется умение читать и понимать тексты и искать
+                        необходимую информацию в личном кабинете и канале в телеграме.</p>
+                    <p>Вся информация в канале обязательна к прочтению.</p>
+                    <p>Чтобы упорядочить и упростить стартовые действия, мы создали для вас чек-лист действий,
+                        необходимых в первую очередь.</p>
+                    <ol start="0">
+                        <li>
+                            Прослушайте новичковую лекцию,
+                            она становится доступна в разделе "Ваза Знаний" в день старта.
+                        </li>
+                        <li>
+                            В первые выходные после {{ user.profile.wave.start_date }} сделайте стартовые фотографии.
+                            Просмотрите видеоинструкцию. Сначала сделайте и загрузите фото в одежде, они уйдут на
+                            модерацию.
+                            Если камера установлена правильно, фотографии одобрят, либо вы получите рекомендации по
+                            перестановке камеры.
+                        </li>
+                        <li>
+                            После одобрения сделайте фото в белье или раздельном купальнике, мужчины - в плавках.
+                        </li>
+                        <li>
+                            Соберите из стартовых фото коллаж.
+                        </li>
+                        <li>
+                            Сделайте стартовые замеры.
+                        </li>
+                        <li>
+                            После загрузки стартового коллажа электронный помощник сможет отвечать на ваши
+                            вопросы.
+                        </li>
+                        <li>
+                            Получите методичку и прочитайте ее сразу. Она вам пригодится еще много раз.
+                        </li>
+                        <li>
+                            Получите ссылку в канал, если вы участник заочного формата, и в чаты, если очного.
+                            Ссылка находится в личном кабинете.
+                        </li>
+                        <li>
+                            Ознакомьтесь с правилами формулировки вопросов и постановки тегов. Обращайтесь к ним
+                            каждый раз при формулировке вопроса. Электронный помощник передаст ваше сообщение
+                            команде, если оно корректно.
+                        </li>
+                        <li>
+                            Любой ответ электронного помощника, отличающийся от «ваш вопрос принят и
+                            записан» требует от вас анализа, переформулирования и повторной отправки
+                            сообщения. Редактирования сообщений электронный помощник не понимает и
+                            не передаёт команде.
+                        </li>
+                    </ol>
+                </div>
+            {% else %}
+                <div class="grid-sizer col-xs-12 col-sm-6 col-md-4 col-lg-3"></div>
+
+                {% if is_newbie %}
+                    <div class="grid-item col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                        <div class="panel panel-info bg-info text-info">
+                            <div class="panel-body">
+
+                                <p>
+                                    Уважаемый участник, приветствуем вас на старте.
+                                </p>
+                                <p>
+                                    Мы напоминаем, что от участника канала требуется умение читать и понимать тексты и
+                                    искать необходимую информацию в личном кабинете и канале в телеграме.
+                                </p>
+                                <p>
+                                    Вся информация в канале обязательна к прочтению.
+                                </p>
+                                <p>
+                                    Чтобы упорядочить и упростить стартовые действия, мы создали для вас чек-лист
+                                    действий, необходимых в первую очередь.
+                                </p>
+                                <ol start="0">
+                                    <li>
+                                        Прослушайте новичковую лекцию, она доступна в разделе
+                                        <a href="/meetings/" target="_blank">лекции</a> "Вазы Знаний".
+                                    </li>
+                                    <li>
+                                        В первые выходные после {{ user.profile.wave.start_date }} сделайте стартовые
+                                        фотографии.
+                                        Просмотрите видеоинструкцию. Сначала сделайте и загрузите фото в одежде, они
+                                        уйдут на модерацию.
+                                        Если камера установлена правильно, фотографии одобрят, либо вы получите
+                                        рекомендации по перестановке камеры.
+                                    </li>
+                                    <li>
+                                        После одобрения сделайте фото в белье или раздельном купальнике, мужчины - в
+                                        плавках.
+                                    </li>
+                                    <li>
+                                        Соберите из стартовых фото коллаж.
+                                    </li>
+                                    <li>
+                                        Сделайте стартовые замеры.
+                                    </li>
+                                    <li>
+                                        После загрузки стартового коллажа электронный помощник сможет отвечать на ваши
+                                        вопросы.
+                                    </li>
+                                    <li>
+                                        Получите методичку и прочитайте ее сразу. Она вам пригодится еще много раз.
+                                    </li>
+                                    <li>
+                                        Получите ссылку в канал, если вы участник заочного формата, и в чаты, если
+                                        очного. Ссылка находится в личном кабинете.
+                                    </li>
+                                    <li>
+                                        Ознакомьтесь с правилами формулировки вопросов и постановки тегов. Обращайтесь к
+                                        ним каждый раз при формулировке вопроса. Электронный помощник передаст ваше
+                                        сообщение команде, если оно корректно.
+                                    </li>
+                                    <li>
+                                        Любой ответ электронного помощника, отличающийся от «ваш вопрос принят и
+                                        записан» требует от вас анализа, переформулирования и повторной отправки
+                                        сообщения. Редактирования сообщений электронный помощник не понимает и
+                                        не передаёт команде.
+                                    </li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                {% endif %}
+                {% if 'CALENDAR' in widgets_data %}
+                    <script>
+                        WIDGETS.CALENDAR = true;
+                    </script>
+
+                    <div class="grid-item  col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                        <div class="grid-item-content panel panel-info">
+                            <div class="panel-heading">
+                                <div class="panel-title">
+                                    Календарь
+                                    <button class="btn btn-sm btn-info pointer glyphicons glyphicons-question-sign pull-right"
+                                            id="calendar-legend-point"
+                                            data-toggle="popover" data-trigger="click"
+                                    ></button>
+                                </div>
+                            </div>
+                            <div class="panel-body" id="data-calendar"></div>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if 'ALARM' in widgets_data %}
+                    <script>
+                        WIDGETS.ALARM = true;
+                    </script>
+                    <div class="grid-item col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                        <div class="grid-item-content panel panel-info">
+                            <div class="panel-heading">
+                                <div class="panel-title">Особые отметки</div>
+                            </div>
+                            <div class="panel-body">
+                                {% if user.profile.warning_flag in widgets_data.ALARM.warning_flags %}
+                                    <div class="panel panel-default">
+                                        <div class="row">
+                                            <div class="col-xs-4 text-center h1" id="alarm_sign"
+                                                 style="font-size: 80px;">
+                                                {% if user.profile.warning_flag == 'TEST' %}
+                                                    <span class="text-warning">
+                                        <i class="glyphicons glyphicons-light-beacon"></i>
+                                    </span>
+                                                {% endif %}
+                                                {% if user.profile.warning_flag == 'OBSERVATION' %}
+                                                    <span class="text-primary">
+                                        <i class="glyphicons glyphicons-light-beacon"></i>
+                                    </span>
+                                                {% endif %}
+                                                {% if user.profile.warning_flag == 'TREATMENT' %}
+                                                    <span class="text-success">
+                                        <i class="glyphicons glyphicons-light-beacon"></i>
+                                    </span>
+                                                {% endif %}
+                                                {% if user.profile.warning_flag == 'DANGER' %}
+                                                    <span class="text-danger">
+                                        <i class="glyphicons glyphicons-light-beacon"></i>
+                                    </span>
+                                                {% endif %}
+                                                {% if user.profile.warning_flag == 'OOC' %}
+                                                    <span class="text-dark">
+                                        <i class="glyphicons glyphicons-light-beacon"></i>
+                                    </span>
+                                                {% endif %}
+                                                {% if user.profile.warning_flag == 'PR' %}
+                                                    <span class="text-purple">
+                                        <i class="glyphicons glyphicons-light-beacon"></i>
+                                    </span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-xs-8"
+                                                 style="min-height: 94px; position: relative; font-weight: bolder; font-size: 1.2em; margin-top: 16px; margin-bottom: 16px;">
+                                            <span style="padding: 20% 0;">
+                                                {{ user.profile.get_warning_flag_display }}
+                                            </span>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                {#                                {% if last_recommendation %}#}
+                                {#                                    {% if last_recommendation.has_meal_adjustments %}#}
+                                {#                                        <div class="row">#}
+                                {#                                            <div class="col-xs-12">#}
+                                {#                                                <div class="h4">Персональные рекомендации:</div>#}
+                                {#                                                {% if last_recommendation.adjust_calories %}#}
+                                {#                                                    Корректировка калорийности рациона:#}
+                                {#                                                    {% if last_recommendation.adjust_calories > 0 %}#}
+                                {#                                                        +{% endif %}{{ last_recommendation.adjust_calories|safe }}%#}
+                                {#                                                    <br/>{% endif %}#}
+                                {#                                                {% if last_recommendation.adjust_protein %}#}
+                                {#                                                    Корректировка белка в рационе:#}
+                                {#                                                    {% if last_recommendation.adjust_protein > 0 %}#}
+                                {#                                                        +{% endif %}{{ last_recommendation.adjust_protein|safe }}%#}
+                                {#                                                    <br/>{% endif %}#}
+                                {#                                                {% if last_recommendation.add_fat %}Добавить в рацион жиров#}
+                                {#                                                    <br/>{% endif %}#}
+                                {#                                                {% if last_recommendation.adjust_fruits != 'NO' %}#}
+                                {#                                                    {{ last_recommendation.get_adjust_fruits_display }}#}
+                                {#                                                    <br/>{% endif %}#}
+                                {#                                                {% if last_recommendation.adjust_carb_bread_min %}Минимизировать хлеб#}
+                                {#                                                    <br/>{% endif %}#}
+                                {#                                                {% if last_recommendation.adjust_carb_bread_late %}Убрать хлеб из ужина#}
+                                {#                                                    <br/>{% endif %}#}
+                                {#                                                {% if last_recommendation.adjust_carb_carb_vegs %}Исключить запасающие#}
+                                {#                                                    овощи после обеда{% endif %}#}
+                                {#                                            </div>#}
+                                {#                                        </div>#}
+                                {#                                    {% endif %}#}
+                                {#                                {% endif %}#}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if 'CHARTS' in widgets_data %}
+                    <script>
+                        WIDGETS.CHARTS = true;
+                    </script>
+                    <div class="grid-item col-xs-12 col-md-8 col-lg-6">
+                        <div class="grid-item-content panel panel-info">
+                            <div class="panel-heading">
+                                <div class="panel-title">
+                                    Графики
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="col-xs-12" id="srbc_user_chart">
+
+                                </div>
+                                <div class="col-xs-12">
+                                    <div id="srbc_user_stat" class="well well-sm" style="display: none;">
+                                        <div>
+                                            <label>Дата начала участия:</label>&nbsp;
+                                            <span id="date_start"></span> (<span id="start_weeks_count"></span> нед.)
+                                        </div>
+                                        <div>
+                                            <label>&Delta; веса/trueweight от старта:</label>&nbsp;
+                                            <span id="weight_delta_start"></span> (<span
+                                                id="trueweight_delta_start"></span>)
+                                        </div>
+                                        <div>
+                                            <label>Потерянный % массы тела от старта:</label>&nbsp;
+                                            <span id="trueweight_percent_start"></span>
+                                        </div>
+                                        <div>
+                                            <label>Скорость изменения массы тела от старта:</label>&nbsp;
+                                            <span id="trueweight_delta_weekly"></span> кг/нед.
+                                        </div>
+
+                                        <div>
+                                            <label>&Delta; веса/trueweight за период:</label>&nbsp;
+                                            <span id="weight_delta_interval"></span> (<span
+                                                id="trueweight_delta_interval"></span>)
+                                        </div>
+                                        <div>
+                                            <label>Жиронакопительных действий/дней за период:</label>&nbsp;
+                                            <span id="faults_total_count"></span>&nbsp;
+                                            (<span id="faulty_days_count"></span>/<span id="meal_days_count"></span>)
+                                        </div>
+                                        <div>
+                                            <label>% от нормы/выполнение по шагам:</label>&nbsp;
+                                            <span id="steps_avg_interval"></span>&nbsp;
+                                            (<span id="steps_complete_interval"></span>/<span
+                                                id="steps_count_interval"></span>)
+                                        </div>
+                                        <div>
+                                            <label>% от нормы/выполнение по сну:</label>&nbsp;
+                                            <span id="sleep_avg_interval"></span>&nbsp;
+                                            (<span id="sleep_complete_interval"></span>/<span
+                                                id="sleep_count_interval"></span>)
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if 'MEETINGS' in widgets_data and widgets_data.MEETINGS.meetings|length %}
+                    <script>
+                        WIDGETS.MEETINGS = true;
+                    </script>
+                    <div class="grid-item col-xs-12 col-sm-6 col-md-4 col-lg-3">
+                        <div class="grid-item-content panel panel-info">
+                            <div class="panel-heading">
+                                <div class="panel-title">Последние лекции</div>
+                            </div>
+                            <div class="panel-body">
+                                <ul>
+                                    {% for meeting in widgets_data.MEETINGS.meetings %}
+                                        <li>
+                                            <a href="/meetings/{{ meeting.pk }}/">
+                                                {% if meeting.title %}
+                                                    {{ meeting.title }}
+                                                {% else %}
+                                                    {{ meeting.date|date:"d E Y" }} г.
+                                                {% endif %}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if 'NOTES' in widgets_data and widgets_data.NOTES.notes|length %}
+                    <script>
+                        WIDGETS.NOTES = true;
+                    </script>
+                    <div class="grid-item col-xs-12 col-md-8 col-lg-6">
+                        <div class="grid-item-content panel panel-info">
+                            <div class="panel-heading">
+                                <div class="panel-title">Персональные рекомендации</div>
+                            </div>
+                            
+                            <ul class="panel-body list-group notes_container">
+                                {% for note in widgets_data.NOTES.notes_description %}
+                                    <li class="list-group-item" style="background-color: #f1dc8e">
+                                        <i class="glyphicons glyphicons-check"></i>
+                                        <b>{{ note.title|safe }} </b>
+                                        <div>
+                                            {{ note.description|safe }}
+                                        </div>
+                                    </li> 
+                                {% endfor %}
+                            </ul>    
+
+                            <ul class="panel-body list-group notes_container">
+                                {% for note in widgets_data.NOTES.notes %}
+                                    {% if note.label == 'DOC' %}
+                                        <li class="list-group-item list-group-item-danger">
+                                        <i class="glyphicons glyphicons-doctor"></i>
+                                    {% endif %}
+                                {% if note.label == 'WTF' %}
+                                    <li class="list-group-item list-group-item-danger">
+                                    <div>
+                                    <i class="glyphicons glyphicons-stop-sign"></i>
+                                {% endif %}
+                                {% if note.label == 'IG' %}
+                                    <li class="list-group-item list-group-item-success">
+                                    <i class="glyphicons glyphicons-magic"></i>
+                                {% endif %}
+                                {% if note.label == 'PZDC' %}
+                                    <li class="list-group-item list-group-item-success">
+                                    <i class="glyphicons glyphicons-magic"></i>
+                                {% endif %}
+                                {% if note.label == 'CHAT' %}
+                                    <li class="list-group-item list-group-item-info">
+                                    <i class="glyphicons glyphicons-chat"></i>
+                                {% endif %}
+                                {% if note.label == 'NB' %}
+                                    <li class="list-group-item list-group-item-warning">
+                                    <i class="glyphicons glyphicons-exclamation-sign"></i>
+                                {% endif %}
+                                {% if note.label == 'ORG' %}
+                                    <li class="list-group-item list-group-item-warning">
+                                    <i class="glyphicons glyphicons-exclamation-sign"></i>
+                                {% endif %}
+                                {% if note.label == 'STAT' %}
+                                    <li class="list-group-item list-group-item-success">
+                                    <i class="glyphicons glyphicons-charts"></i>
+                                {% endif %}
+
+                                <b>{{ note.date_added|date:"d E Y" }} г.</b>
+                                <div>
+                                    {{ note.content|safe }}
+                                </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% if widgets_data.NOTES.notes_count > 3 %}
+                                <div class="panel-footer text-right">
+                                    <a href="/notes/">
+                                        Посмотреть все &gt;&gt;&gt;
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}

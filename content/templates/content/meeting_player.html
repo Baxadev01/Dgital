@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load bootstrap %}
+{% load static %}
+
+{% block title %}Слушай лекцию!{% endblock %}
+{% block css_block %}
+    <link href="{% static 'css/meeting_player.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-12 centered text-center">
+                <h1 class="cursive">Слушай лекцию!</h1>
+                {% if meeting.title %}
+                    <h2 class="cursive">{{ meeting.title }}</h2>
+                {% else %}
+                    <h2 class="cursive">
+                        {{ meeting.get_type_display }}
+                        <span style="white-space: nowrap;">от {{ meeting.date|date:"d E Y" }} г.</span>
+                    </h2>
+                {% endif %}
+            </div>
+            <div class="col-sm-6">
+                <div class="panel panel-success">
+                    <div class="panel-heading">
+                        Плеер
+                    </div>
+                    <div class="panel-body" id="hls_js_container">
+                        {% if meeting.is_playable %}
+                            <audio id="player" controls class="videoCentered"></audio>
+                            <br>
+                            <canvas id="buffered_c" height="15" width="100%" class="videoCentered"
+                                    onclick="buffered_seek(event);"></canvas>
+                            <br><br>
+                            <pre id="HlsStatus" class="center"
+                                 style="white-space: pre-wrap;{% if not user.is_superuser %} display: none;{% endif %}"></pre>
+                            <div id="extra_controls">
+                                <button type="button" class="btn btn-lg btn-info"
+                                        onclick="$('#player')[0].currentTime-=30"
+                                        title="Назад на 30 секунд">
+                                    <i class="glyphicons glyphicons-rewind"></i>
+                                </button>
+                                <button type="button" class="btn btn-lg btn-info"
+                                        onclick="$('#player')[0].currentTime+=30"
+                                        title="Вперед на 30 секунд">
+                                    <i class="glyphicons glyphicons-forward"></i>
+                                </button>
+                                <div class="btn-group">
+                                    <input type="text" class="btn-lg btn btn-default" id='seek_pos' size="8"
+                                           onkeydown="if(window.event.keyCode=='13'){ $('#player')[0].currentTime=$('#seek_pos').val();}"
+                                           title="Перейти на отметку времени (в секундах)"
+                                    />
+                                    <button type="button" class="btn btn-lg btn-success"
+                                            onclick="$('#player')[0].currentTime=$('#seek_pos').val()"
+                                            title="Вернуться на отметку">
+                                        <i class="glyphicons glyphicons-history"></i>
+                                    </button>
+                                </div>
+                                <button type="button"
+                                        class="btn btn-lg btn-warning pull-right"
+                                        title="Что-то не грузится!" onclick="hls.recoverMediaError()">
+                                    <i class="glyphicons glyphicons-exclamation-sign"></i>
+                                </button>
+                            </div>
+                            <script>
+                                var MEETING_ID = '{{ meeting.pk }}';
+
+                            </script>
+                        {% else %}
+                            <h2>Лекция еще не загружена</h2>
+                            <script>
+                                var MEETING_ID = null;
+
+                            </script>
+                        {% endif %}
+                    </div>
+
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        Отвеченные вопросы
+                    </div>
+                    <div class="panel-body">
+                        {% if meeting.description %}
+                            {{ meeting.description|linebreaks }}
+                        {% else %}
+                            Нет описания
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block js_block %}
+    <script>
+        var hls;
+    </script>
+    <script src="{% static 'js/hls.js' %}"></script>
+    <script src="{% static 'js/canvas.js' %}"></script>
+    <script src="{% static 'js/metrics.js' %}"></script>
+    <script src="{% static 'js/jsonpack.js' %}"></script>
+    <script src="{% static 'js/meeting.min.js' %}"></script>
+{% endblock %}

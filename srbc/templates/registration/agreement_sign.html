@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load bootstrap %}
+{% load static %}
+
+{% block title %}Соглашение об участии{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div style="height: 80px" class="hidden-xs"></div>
+        <h2 class="login-logo center text-center">
+            Соглашение об участии в проекте
+        </h2>
+        <div>
+            <p>
+                Настоящим я обязуюсь гарантировать конфиденциальность информации,
+                полученной мною во время участия в проекте selfrebootcamp, включая
+            </p>
+            <ul>
+                <li>информацию, полученную в личных сообщениях</li>
+                <li>информацию, полученную в информационном канале в Telegram</li>
+                <li>информацию, полученную на сайте selfreboot.camp</li>
+                <li>информационные онлайн-лекции</li>
+            </ul>
+            <p>
+                Я согласен, что в случае нарушения мною вышеуказанных гарантий, мое участие в проекте
+                может быть прекращено досрочно по решению организаторов проекта.
+            </p>
+            <p>
+                Если вы согласны с данными условиями, впишите своё имя пользователя.
+            </p>
+        </div>
+        <div class="row">
+            <div class="col-xs-12">
+                <form method="post" class="text-center center">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next }}"/>
+                    <input class="form-control has-warning" style="margin-bottom: 8px;" name="signature"/>
+                    {% if result.status %}
+                        {% if result.status == 'error' %}
+                            <div class="panel panel-danger">
+                                <div class="panel-heading">
+                                    {{ result.message }}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+
+                    <button class="btn btn-success btn-lg btn-block" style="margin-bottom: 16px;" type="submit"
+                            name="action"
+                            value="connect">
+                        <i class="glyphicons glyphicons-tick"></i> Я согласен
+                    </button>
+                </form>
+            </div>
+            <div class="col-xs-6 col-xs-offset-6 col-sm-4 col-sm-offset-8 col-md-2 col-md-offset-10">
+                <form method="post" action="/logout/">
+                    {% csrf_token %}
+                    <button class="btn btn-danger btn-sm btn-block" style="margin-bottom: 8px;" type="submit">
+                        <i class="glyphicons glyphicons-stop-sign"></i> Я не согласен
+                    </button>
+                </form>
+            </div>
+        </div>
+{% endblock %}

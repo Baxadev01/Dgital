@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% load bootstrap %}
+{% load bootstrap3 %}
+{% load static %}
+
+{% block title %}Выбор тарифа и даты старта{% endblock %}
+
+{% block css_block %}
+    <link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap-social.css' %}">
+    <link rel="stylesheet" href="{% static 'css/subscription.css' %}">
+
+    <style type="text/css">
+        .link {
+            background:none;
+            border:none;
+            color: #337ab7;
+            padding: 0;
+        }
+    </style>
+
+{% endblock %}
+
+{% block js_block %}
+    <script>
+        window.STRIPE_PK = "{{stripe_pk}}"
+        window.CSRF_TOKEN = "{{ csrf_token }}";
+    </script>
+
+    <script src="{% static 'js/stripe.js' %}"></script>
+    <script src="{% static 'js/yandexkassa.js' %}"></script>
+
+    {{ subscription_tariffs|json_script:"data-subscription_tariffs" }}
+    <script>
+        var SUBSCRIPTION_TARIFFS = JSON.parse(document.getElementById('data-subscription_tariffs').textContent);
+
+        function show_wave_tariffs_block() {
+            $('#wave_tariffs_block').show();
+            $('#subscription_tariffs_block').hide();
+        }
+
+        function show_subscription_tariffs_block() {
+            $('#wave_tariffs_block').hide();
+            $('#subscription_tariffs_block').show();
+        }
+
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        })
+
+        function show_message(data) {
+            if (data.error) {
+                alert(data.error);
+            } else if (data.message) {
+                alert(data.message);
+            } else {
+                alert(data)
+            }
+        }
+
+        function subscription_save(action, tariff_slug) {
+            //запускаем лоадер на время выполнения
+            $("#stripe_is_loading").show();
+
+            action(tariff_slug).then( (data) => {
+                if (data) {
+                    $("#stripe_is_loading").hide();
+                    show_message(data)
+                }
+            })
+        }
+
+        function change_price(tariffs_info) {
+            var subscription_tariff = null;
+            var meeting_checked = document.getElementById('meeting_access').checked;
+            var diary_checked = document.getElementById('diary_access').checked;
+            var diary_access = document.querySelector('input[name="diary_access_mode"]:checked').value
+
+            if(diary_checked) {
+                document.getElementById('diary_access_choise').style.display = "block"
+            } else {
+                document.getElementById('diary_access_choise').style.display = "none"
+            }
+
+            if(!diary_checked && !meeting_checked) {
+                document.getElementById('subscription_price').style.display = "none"
+                document.getElementById('subscription_pay').style.display = "none"
+                document.getElementById('nds').style.display = "none"
+                return
+            }
+
+
+            for(sc=0,x=SUBSCRIPTION_TARIFFS.length;sc<x;sc++) {
+                var tariff = SUBSCRIPTION_TARIFFS[sc]
+
+                if(meeting_checked) {
+                    if (tariff.meeting_access === "NONE") {
+                        continue;
+                    }
+                } else {
+                    if (tariff.meeting_access !== "NONE") {
+                        continue;
+                    }
+                }
+
+                if(diary_checked) {
+                    if(diary_access !== tariff.diary_access) {
+                        continue
+                    }
+                }
+                else {
+                    if(tariff.diary_access !== "READ") {
+                        continue
+                    }
+                }
+
+                subscription_tariff = tariff
+                break;
+            }
+
+            document.getElementById('subscription_price').style.display = "block"
+
+            if(subscription_tariff) {
+                var text = "Цена: " +  subscription_tariff.price_eur + " EUR / " + subscription_tariff.price_rub + " RUB за ";
+                text = text + subscription_tariff.duration + " " + subscription_tariff.duration_unit + "*";
+                document.getElementById('subscription_price').innerText = text
+                document.getElementById('nds').style.display = "block"
+                document.getElementById('subscription_pay').style.display = "block"
+
+                document.getElementById('stripe_subscription_save_button').onclick = function() { subscription_save(stripeCreateSubscription, subscription_tariff.slug) };
+                document.getElementById('yandex_subscription_save_button').onclick = function() { subscription_save(yandexCreateSubscription, subscription_tariff.slug) };
+
+            } else {
+                document.getElementById('subscription_price').innerText = "Для уточнения цены обратитесь в службу поддержки"
+                document.getElementById('nds').style.display = "none"
+                document.getElementById('subscription_pay').style.display = "none"
+            }
+        }
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        {% include "blocks/progress_bar.html" %}
+        <h1>Выбор тарифа и даты старта</h1>
+        <h3 class="login-logo">
+          Вы можете присоединиться к проекту, выбрав тариф.
+        </h3>
+        <button class="link" onClick="return show_wave_tariffs_block()">Тарифы с активным участием</button> стартуют в определенную дату.<br/>
+        Если вы хотите начать немедленно, вы можете <button class="link" onClick="return show_subscription_tariffs_block()">оформить одну из подписок</button> на материалы проекта.
+        В зависимости от выбранных опций это будет стоить от 300 до 1000 рублей в месяц (от 3 до 10 евро при оплате с иностранной карты). Продление подписки автоматическое, отменить можно в любой день.<br/>
+        Можно также <button class="link" onClick="return show_wave_tariffs_block()">ВЫБРАТЬ ТАРИФ VIP</button> - в этом тарифе старт состоится сразу после оплаты.
+        <h4 class="login-logo">
+            <a href="https://selfreboot.camp/tariffs/" target="_blank">Подробнее о тарифах</a>
+        </h4>
+        {% if user.application.is_payment_allowed %}
+            <div class="panel panel-warning">
+                <div class="panel-heading">
+                    <h4>
+                        Для выбранных Вами формата участия открыта оплата. Перейдите на <a href="/payment/">платёжную
+                        форму</a> для оплаты участия в проекте.
+                    </h4>
+                    <p></p>
+                    <h5>Если Вы хотите изменить дату старта или формат участия, пожалуйста,
+                        напишите нам в  <a href="https://t.me/srbc_support_bot" target="_blank">техподдержку</a>.
+                    </h5>
+                </div>
+            </div>
+            <div>
+        {% else %}
+            <form method="post">
+            {% csrf_token %}
+        {% endif %}
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title"
+                onClick="return show_wave_tariffs_block()">Тарифы с активным участием</div>
+            </div>
+
+            <div class="panel-body"
+                id="wave_tariffs_block"
+                {% if current_tariff %}
+                    {% if not current_tariff.tariff_group.is_wave %}
+                        style="display: none;"
+                    {% endif %}
+                {% endif %}
+            >
+                <ul class="row radio-list">
+                    {% for tariff_id, tariff_info in form.fields.wave_tariff.choices %}
+                        <li class="col-xs-12">
+                            <div class="form-group">
+                                <div class="radio">
+                                    <input type="radio" name="wave_tariff" value="{{ tariff_id }}"
+                                            {% if current_tariff %}
+                                                {% if current_tariff.id == tariff_id %}
+                                                    checked
+                                                {% endif %}
+                                            {% endif %}
+
+                                            {% if user.application.is_payment_allowed %}disabled="disabled"{% endif %}
+                                    />
+                                    <h4>Тариф "{{ tariff_info.title }}"</h4>
+                                    <h5>Стоимость: {{ tariff_info.price }} рублей / {{tariff_info.duration}} {{tariff_info.duration_unit}}</h5>
+                                </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <div id='campaign_panel'>
+                    <div class="panel-heading">
+                        <div class="panel-title">Дата старта</div>
+                        {% if user.profile.communication_mode %}
+                            {% if not user.application.campaign %}
+                                <div class="alert alert-danger h5" style="margin-top: 16px">
+                                    Для перехода на следующий шаг нужно выбрать дату старта.
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+
+                    <div class="panel-body">
+                        <ul class="row radio-list">
+                            {% for campaign_id, campaign_title in form.fields.campaign.choices %}
+                                <li class="col-xs-12">
+                                    <div class="form-group">
+                                        <div class="radio">
+                                            <input type="radio" name="campaign" value="{{ campaign_id }}"
+                                                {% if current_campaign.pk == campaign_id %}checked{% endif %}
+                                                {% if not current_campaign.pk %}{% if not campaign_id %}checked
+                                                {% if user.application.is_payment_allowed %}disabled="disabled"{% endif %}
+                                                {% endif %}{% endif %}/>
+                                            <h4>{{ campaign_title }}</h4>
+                                        </div>
+                                    </div>
+                                </li>
+                            {% endfor %}
+
+                        </ul>
+                    </div>
+                    {% if not user.application.is_payment_allowed %}
+                        <div class="alert alert-warning h5">
+                          Возможность оплаты откроется в течение суток, если в выбранном вами тарифе есть свободные места.
+                          Уведомление об этом придет через бота в телеграме <i>Ассистент SRBC</i>.
+                          Если этого не случилось, пожалуйста, свяжитесь с поддержкой: например, напишите нам в <a href="https://t.me/srbc_support_bot" target="_blank">техподдержку</a>.
+                          В письме укажите номер личного кабинета, выбранный тариф и суть проблемы.
+                        </div>
+                        <div class="panel-footer text-right">
+                            <button type="submit" name="action" value="save" class="btn btn-lg btn-primary">
+                                <i class="glyphicons glyphicons-money"></i>&nbsp;Сохранить
+                            </button>
+                    {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if not user.application.is_payment_allowed %}
+            </form>
+        {% else %}
+            </div>
+        {% endif %}
+
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title"
+                onClick="return show_subscription_tariffs_block()">Подписка на отдельные функции проекта</div>
+            </div>
+            <div class="panel-body"
+                id="subscription_tariffs_block"
+                {% if current_tariff %}
+                    {% if current_tariff.tariff_group.is_wave %}
+                        style="display: none;"
+                    {% endif %}
+                {% else %}
+                    style="display: none;"
+                {% endif %}
+            >
+                {% include "blocks/subscription_tariffs.html" %}
+            </div>
+
+        </div>
+    </div>
+{% endblock %}

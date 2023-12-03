@@ -1,0 +1,723 @@
+{% extends "srbc/base.html" %}
+{% load static bootstrap %}
+
+{% block title %}
+    Настройки аккаунта
+{% endblock %}
+{% block navbar_bottom %}{% endblock %}
+{% block css_block %}
+    {#    <link href="{% static 'css/fullcalendar.min.css' %}" rel="stylesheet"/>#}
+    {#    <link href="{% static 'css/dashboard_user.min.css' %}" rel="stylesheet"/>#}
+    <link rel="stylesheet" href="{% static 'css/subscription.css' %}">
+    <style>
+
+        .cell {
+            padding-left: 0px;
+            padding-right: 0px;
+            font-size: 14px;
+            font-weight: normal;
+            line-height: 1;
+            color: #555;
+            text-align: center;
+            background-color: #eee;
+            border: 1px solid #ccc;
+            min-height: 30px;
+            padding-top: 7px;
+        }
+
+        .left_cell {
+            padding-right: 0px;
+            border-right: 1px solid #ccc;
+            border-radius: 4px;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            min-height: 30px;
+        }
+
+        .right_cell {
+            padding-left: 0px;
+            border-left: 1px solid #ccc;
+            border-radius: 4px;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            min-height: 30px;
+        }
+
+        .no_margin {
+            margin-right: 0px;
+            margin-left: 0px;
+        }
+    </style>
+{% endblock %}
+
+{% block js_block %}
+    <script>
+        window.STRIPE_PK = "{{stripe_pk}}"
+        window.CSRF_TOKEN = "{{ csrf_token }}";
+    </script>    
+    <script src="{% static 'js/stripe.js' %}"></script>
+    <script src="{% static 'js/yandexkassa.js' %}"></script>
+
+    {{ subscription_tariffs|json_script:"data-subscription_tariffs" }}
+
+    <script>
+        var SUBSCRIPTION_TARIFFS = JSON.parse(document.getElementById('data-subscription_tariffs').textContent);
+
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        })
+        
+        function cancelSubscription() {
+            return fetch("/api/v1/subscription/cancel/", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": window.CSRF_TOKEN,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({})
+            }).then(response => response.json()
+            ).then(function (data) {
+                return data;
+            });
+        }
+
+        function show_message(data) {
+            if (data.error) {
+                alert(data.error);
+            } else if (data.message) {
+                alert(data.message);
+            } else {
+                alert(data)
+            }
+        }
+
+        function subscription_save(action, tariff_slug) {
+            //запускаем лоадер на время выполнения
+            $("#stripe_is_loading").show();
+
+            action(tariff_slug).then( (data) => {
+                $("#stripe_is_loading").hide();
+                $('#subscriptionModal').modal('hide');
+
+                show_message(data)
+            })
+        }
+
+        function subscription_cancel() {
+            if (confirm('Вы уверены, что хотите отменить подписку?')) {
+
+                {% comment %} $("#stripe_is_loading").show(); {% endcomment %}
+
+                cancelSubscription().then( (data) => {
+                    {% comment %} $("#stripe_is_loading").hide(); {% endcomment %}
+
+                    show_message(data)
+                })
+            }
+        }
+
+        function warning_close() {
+            $('#warningModal').modal('hide');
+            $('#subscriptionModal').modal('show');
+        }
+
+        $('#subscriptionModal').on('show.bs.modal', function (e) {
+            {% comment %} stripe_save_button.innerText = 'Установить' {% endcomment %}
+            if ('{{active_subscription_slug}}' != '') {
+                for(i=0,x=SUBSCRIPTION_TARIFFS.length;i<x;i++) {
+                    if(SUBSCRIPTION_TARIFFS[i].slug === '{{active_subscription_slug}}') {
+                        var tariff = SUBSCRIPTION_TARIFFS[i]
+
+                        document.getElementById('meeting_access').checked = tariff.meeting_access !== "NONE"
+                        document.getElementById('diary_access').checked = tariff.diary_access !== "READ"
+                        if(tariff.diary_access !== "READ") {
+                            id = 'diary_access_mode_' + tariff.diary_access
+                            document.querySelector('input[id=' + id +']').checked = true
+                            {% comment %} document.querySelector('input[name="diary_access_mode"]').value = tariff.diary_access {% endcomment %}
+                        }
+                        
+                        change_price()
+                    }
+                }
+            }
+        })
+
+        function change_price() {
+            var subscription_tariff = null;
+            var meeting_checked = document.getElementById('meeting_access').checked;
+            var diary_checked = document.getElementById('diary_access').checked;
+            var diary_access = document.querySelector('input[name="diary_access_mode"]:checked').value
+
+            var stripe_save_button = document.getElementById('stripe_subscription_save_button')
+            var yandex_save_button = document.getElementById('yandex_subscription_save_button')
+
+            if(diary_checked) {
+                document.getElementById('diary_access_choise').style.display = "block"
+            } else {
+                document.getElementById('diary_access_choise').style.display = "none"
+            }
+            if(!diary_checked && !meeting_checked) {
+                document.getElementById('subscription_price').style.display = "none"
+                document.getElementById('subscription_pay').style.display = "none"
+                document.getElementById('subscription_pay_warning').style.display = "none"
+                document.getElementById('nds').style.display = "none"
+                return
+            }
+            
+
+            for(sc=0,x=SUBSCRIPTION_TARIFFS.length;sc<x;sc++) {
+                var tariff = SUBSCRIPTION_TARIFFS[sc]
+
+                if(meeting_checked) {
+                    if (tariff.meeting_access === "NONE") {
+                        continue;
+                    }
+                } else {
+                    if (tariff.meeting_access !== "NONE") {
+                        continue;
+                    }
+                }
+
+                if(diary_checked) {
+                    if(diary_access !== tariff.diary_access) {
+                        continue
+                    }
+                }
+                else {
+                    if(tariff.diary_access !== "READ") {
+                        continue
+                    }
+                }
+
+                subscription_tariff = tariff
+                break;
+            }
+
+            document.getElementById('subscription_price').style.display = "block"
+            {% comment %} document.getElementById('mobile_button').onclick = function() { go_to_application(data.token) }; {% endcomment %}
+            if(subscription_tariff) {
+                var text = "Цена: " +  subscription_tariff.price_eur + " EUR / " + subscription_tariff.price_rub + " RUB за ";
+                text = text + subscription_tariff.duration + " " + subscription_tariff.duration_unit + "*";
+                document.getElementById('subscription_price').innerText = text;
+                document.getElementById('nds').style.display = "block";
+                document.getElementById('subscription_pay_warning').style.display = "block";
+                document.getElementById('subscription_pay').style.display = "block";
+
+                if ('{{active_subscription_slug}}' != '') {
+                    var changing_text = ""
+                    
+                    stripe_save_button.innerText = 'Установить'
+                    yandex_save_button.style.display = "none";
+
+                    // если меняем подписку в будущем и она сейчас не активна - не берем доплат и не пишем юзеру
+                    if('{{user.profile.active_tariff_history.wave}}' != 'None') {
+                        
+                    }   
+                    else {
+                        if(tariff.changing_data.mode == 'upgrade') {
+                            changing_text = "Начиная с " + subscription_tariff.changing_data.renewal_data + ", сумма регулярного списания станет "
+                            changing_text += subscription_tariff.price_eur + " EUR."
+                            if(subscription_tariff.changing_data.price_delta >= 1) {
+                                changing_text += " Разница в цене между тарифами составляет " + subscription_tariff.changing_data.price_delta
+                                changing_text += " EUR за " + subscription_tariff.changing_data.renewal_period + ". Чтобы включить выбранные опции прямо сейчас, нам понадобится"
+                                changing_text += " однократно списать с вашей карты доплату в размере " + subscription_tariff.changing_data.price_delta + " EUR."
+                            }                   
+                            changing_text +=" Установить тариф '" + subscription_tariff.title + "'?"
+                        }
+                        else if(tariff.changing_data.mode == 'sidegrade') {
+                            changing_text = "Начиная с " + subscription_tariff.changing_data.renewal_data + ", сумма регулярного списания станет "
+                            changing_text += subscription_tariff.price_eur + " EUR."
+                            if(subscription_tariff.changing_data.amount >= 1) {
+                                changing_text += " Чтобы сохранить оплаченные ранее возможности и включить выбранные опции прямо сейчас, до "
+                                changing_text += subscription_tariff.changing_data.renewal_data + " будет активен тариф '" + subscription_tariff.changing_data.transition_tariff
+                                changing_text += "' ценой " + subscription_tariff.changing_data.transition_price + " EUR. Нам понадобится однократно списать с вашей карты доплату в размере "
+                                changing_text += subscription_tariff.changing_data.amount + " EUR."
+                            }
+                            changing_text += " Установить тариф '" + subscription_tariff.title + "'?"
+                        }
+                        else if(tariff.changing_data.mode == 'downgrade'){
+                            changing_text = "Начиная с " + subscription_tariff.changing_data.renewal_data + ", сумма регулярного списания станет "
+                            changing_text += subscription_tariff.price_eur + " EUR. До этой даты продолжит действовать тариф '" 
+                            changing_text += '{{user.profile.active_subscription.tariff.title}}' + "' и все его возможности."
+                            
+                            {% comment %} в случае, когда следующий тарифф уже равен выбранному - не добавляем текст про "установить" {% endcomment %}
+                            if('{{active_subscription_slug}}' !== subscription_tariff.slug) {
+                                changing_text +=" Установить тариф '" + subscription_tariff.title + "'?"
+                            }
+                        }
+                        else {
+                            changing_text = ''
+                        }
+                        document.getElementById('subscription_pay_warning').innerText = changing_text;
+
+                    }
+                    // если подписка отменена, то нужно показывать кнопку даже если тариф - тот же, для восстановления
+                    if ('{{active_subscription_slug}}' == subscription_tariff.slug && "{{user.profile.active_subscription.status}}" != "CANCELED") {
+                        document.getElementById('subscription_pay').style.display = "none"
+                    } 
+                    stripe_save_button.onclick = function() { subscription_save(stripeChangeSubscription,subscription_tariff.slug) };
+                }
+                else {
+                    stripe_save_button.onclick = function() { stripeCreateSubscription(subscription_tariff.slug) };
+                    yandex_save_button.onclick = function() { subscription_save(yandexCreateSubscription, subscription_tariff.slug) };
+                }            
+            }
+        }
+    </script>
+{% endblock %}
+
+
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid">
+        {#        <div id="alerts-container" class="fixed">#}
+        {#            {% if not instagram_linked %}#}
+        {#                <div class="alert alert-info" role="alert">#}
+        {#                    <span class="social social-instagram" aria-hidden="true"></span>#}
+        {#                    <span class="sr-only">Внимание:</span>#}
+        {#                    Нет подключенного аккаунта Instagram. Если вы участвуете в проекте на условиях промо-тарифа,#}
+        {#                    вам необходимо подключить свой Instagram к системе selfrebootcamp.<br /><br />#}
+        {#                    <a href="/instagram/">ПОДКЛЮЧИТЬ</a>.#}
+        {#                </div>#}
+        {#            {% endif %}#}
+        {#        </div>#}
+
+        <div class="row">
+            <div class="col-lg-6 col-md-8 col-sm-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <div class="panel-title">
+                            Персональные настройки
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <form method="post">
+                            <fieldset>
+                                <input type="hidden" name="action" value="profile"/>
+                                {{ form|bootstrap }}
+                                <div class='buttons form-group'>
+                                    <button type='submit' class="btn btn-success">
+                                        <i class="glyphicons glyphicons-floppy-disk"></i> Сохранить изменения
+                                    </button>
+                                </div>
+                            </fieldset>
+
+                            {% csrf_token %}
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6 col-md-8 col-sm-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <div class="panel-title">
+                            Статус участника
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="row form-group form-group-lg no_margin">
+                            <div class="col-sm-4 cell left_cell">
+                                    <strong><i  ></i> Статус</strong>
+                            </div>
+                            <div class="col-sm-4 cell">
+                                {% if user.profile.is_active %}
+                                    Активен
+                                {% else %}
+                                    Заблокирован
+                                {% endif %}
+                            </div>
+                            <div class="col-sm-4 cell right_cell">
+                                
+                            </div>
+                        </div>
+                        <div class="row form-group form-group-lg no_margin">
+                            <div class="col-sm-4 cell left_cell">
+                                <strong><i  ></i> Тариф</strong>
+                            </div>
+                            <div class="col-sm-4 cell">
+                                {% if user.profile.is_active %}
+                                    {% if user.profile.tariff.tariff_group.is_wave %}
+                                        {{user.profile.tariff.title}}
+                                    {% else %}
+                                        без участия
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                            <div class="col-sm-4 cell right_cell">
+                                {% if user.profile.is_active %}
+                                    {% if not user.profile.tariff.tariff_group.is_wave %}
+                                        <button type='button' class="button-link" data-toggle="modal"
+                                            data-target="#wave_tariff_action">
+                                            стать участником
+                                        </button> 
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if user.profile.is_active and user.profile.tariff.tariff_group.is_wave%}
+                            <div class="row form-group form-group-lg no_margin">
+                                <div class="col-sm-4 cell left_cell">
+                                    <strong><i  ></i> Поток </strong>
+                                </div>
+                                <div class="col-sm-4 cell">
+                                    {{user.profile.active_tariff_history.wave.title}}
+                                </div>
+                                <div class="col-sm-4 cell right_cell">
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if user.profile.is_active and user.profile.tariff.tariff_group.is_wave%}
+                            <div class="row form-group form-group-lg no_margin">
+                                <div class="col-sm-4 cell left_cell">
+                                    <strong><i  ></i> Окончание участия </strong>
+                                </div>
+                                <div class="col-sm-4 cell">
+                                    {{user.profile.last_active_tariff_history_record.valid_until|date:"d.m.Y"}}
+                                </div>
+                                <div class="col-sm-4 cell right_cell"> 
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if renewal_info_show %}
+                            <div class="row form-group form-group-lg no_margin">
+                                <div class="col-sm-4 cell left_cell">
+                                    <strong><i  ></i> Продление </strong>
+                                </div>
+                                <div class="col-sm-4 cell">
+                                    {% if user.profile.tariff.tariff_group.is_wave %}
+                                        {% if already_renewaled %} 
+                                            {% if user.profile.next_tariff_history %} 
+                                                участие продлено до {{user.profile.last_active_tariff_history_record.valid_until|date:"d.m.Y"}}
+                                            {% else %}
+                                                подписка с {{next_th_start_date|date:"d.m.Y"}}
+                                            {% endif %}
+                                        {% elif can_renewal %} 
+                                            {% if user.profile.tariff_next %} 
+                                                {{user.profile.tariff_next.title}}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        {% else %}
+                                            невозможно
+                                        {% endif %}
+                                    {% else %}
+                                        нет
+                                    {% endif %}
+                                </div>
+                                <div class="col-sm-4 cell right_cell">
+                                    {% if user.profile.tariff.tariff_group.is_wave %}
+                                        {% if can_renewal and not already_renewaled %}
+                                            <a href="/payment/">продлить</a>
+                                            / 
+                                            <button type='button' class="button-link" data-toggle="modal"
+                                                data-target="#wave_tariff_action">
+                                                изменить
+                                            </button> 
+                                        {% endif %}
+                                    {% else %}
+                                        нет
+                                    {% endif %}  
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% if user.profile.is_active and user.profile.tariff.tariff_group.is_wave and renewal_dates_text and not already_renewaled %}
+                            <div style="text-align:center">
+                                Продление и изменение тарифа возможно только с {{ user.profile.tariff_renewal_from|date:"d.m.Y" }} по 
+                                {{ user.profile.tariff_renewal_until|date:"d.m.Y" }}
+                            </div>
+                        {% endif %}
+
+                    </div>
+
+                    <div class="panel-body">
+                        <div class="row form-group form-group-lg no_margin">
+                            <div class="col-sm-4 cell left_cell">
+                                <strong><i  ></i> Подписка </strong>
+                            </div>
+                            <div class="col-sm-4 cell">
+                                {% if user.profile.active_subscription %}
+                                    {% if user.profile.tariff.tariff_group.is_wave %}
+                                        {#  если активный тариф - волновой, то выводим из подписки #} 
+                                        {{user.profile.active_subscription.tariff.title}}
+                                    {% else %}
+                                        {#  именно так!! при даунгрейде - в хистори один тариф, а в подписке активной - другой.#} 
+                                        {{user.profile.active_tariff_history.tariff.title}}
+                                    {% endif %}  
+                                {% else %}
+                                    нет
+                                {% endif %}
+                            </div>
+                            <div class="col-sm-4 cell right_cell">
+                                {% if not user.profile.active_subscription and not already_renewaled%}
+                                    <button type='button' class="button-link" data-toggle="modal"
+                                        data-target="#warningModal">
+                                        оформить
+                                    </button> 
+                                {% elif user.profile.active_subscription and user.profile.active_subscription.stripe_subscription and user.profile.active_subscription.status == "ACTIVE"%}
+                                    <button type='button' class="button-link" data-toggle="modal"
+                                        data-target="#subscriptionModal">
+                                        настроить
+                                    </button> 
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row form-group form-group-lg no_margin">
+                            <div class="col-sm-4 cell left_cell">
+                                <strong><i  ></i> Дата окончания </strong>
+                            </div>
+                            <div class="col-sm-4 cell">
+                                {% if user.profile.active_subscription.status == "ACTIVE" %}
+                                    {% if user.profile.active_subscription.tariff.slug == user.profile.active_tariff_history.tariff.slug %}
+                                        автопродление {{next_th_start_date|date:"d.m.Y"}}
+                                    {% else %}
+                                        {% if user.profile.tariff.tariff_group.is_wave %}
+                                            активация c {{next_th_start_date|date:"d.m.Y"}}
+                                        {% else %}
+                                            {{user.profile.active_subscription.tariff.title}} c {{next_th_start_date|date:"d.m.Y"}}
+                                        {% endif %}
+                                    {% endif %}
+
+                                {% elif user.profile.active_subscription.status == "CANCELED" %}
+                                    отменится {{user.profile.active_tariff_history.valid_until|date:"d.m.Y"}}
+                                {% else %}    
+                                    -
+                                {% endif %}
+                            </div>
+                            <div class="col-sm-4 cell right_cell">
+                                {% if user.profile.active_subscription %}     
+                                    {% if user.profile.active_subscription.status == "ACTIVE"%}
+                                        <button class="button-link" 
+                                            onclick="return subscription_cancel()">
+                                            отменить
+                                        </button>
+                                    {% elif user.profile.active_subscription.status == "CANCELED" and user.profile.active_subscription.stripe_subscription %}
+                                        <button type='button' class="button-link" data-toggle="modal"
+                                            data-target="#subscriptionModal">
+                                            подписаться
+                                        </button>
+                                    {% else %}  
+                                    {% endif %}  
+                                {% endif %}  
+                            </div>
+                        </div>
+
+                        <div style="text-align: center;">
+                            <a href="https://selfreboot.camp/tariffs" target="_blank"> список тарифов</a>
+                            <br>
+                            <a href="https://selfreboot.camp/tariffs/subscription" target="_blank">подробнее о подписках</a>
+                        </div>
+
+                        <div class="modal fade" id="wave_tariff_action" tabindex="-1" role="dialog" >
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                                            <span aria-hidden="true">&times;</span></button>
+                                        <h4 class="modal-title" >Смена тарифа:</h4>
+                                    </div>
+                                    <div class="modal-body">
+                                        Для смены тарифа, пожалуйста, свяжитесь со 
+                                        <a href="https://m.me/selfrebootcamp/" target="_blank"> службой поддержки</a>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal fade" id="subscriptionModal" tabindex="-1" role="dialog">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                                            <span aria-hidden="true">&times;</span></button>
+                                        <h4 class="modal-title" >Настройка подписки:</h4>
+                                    </div>
+                                    <div class="modal-body">
+                                        {% include "blocks/subscription_tariffs.html" %}
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal fade" id="warningModal" tabindex="-1" role="dialog">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-body">
+                                        <div>
+                                            Переход на подписку сокращает доступные вам опции: после {{user.profile.active_tariff_history.valid_until|date:"d.m.Y"}}
+                                            активное участие завершится, вы не сможете задавать вопросы команде проекта и получать персональные рекомендации. 
+                                            Набор доступных функций будет зависеть от формата подписки. Продолжить?
+                                        </div>
+                                        <div style="text-align: center; margin-top:20px">
+                                            <button class="btn btn-warning btn-lg" onclick="warning_close()">
+                                                Продолжить
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            {#            {% if user.profile.tracker_brand != 'OTHER' %}#}
+            {#                <div class="col-lg-6 col-md-8 col-sm-12">#}
+            {#                    <div class="panel panel-info">#}
+            {#                        <div class="panel-heading">#}
+            {#                            <div class="panel-title">#}
+            {#                                Подключение трекера#}
+            {#                            </div>#}
+            {#                        </div>#}
+            {#                        <div class="panel-body text-center">#}
+            {#                            {% if user.profile.tracker_brand == 'XIAOMI' %}#}
+            {#                                {% if user.profile.mifit_id %}#}
+            {#                                    <button class="btn btn-success btn-lg" disabled>#}
+            {#                                        <i class="glyphicons glyphicons-tick"></i> Подключено#}
+            {#                                    </button>#}
+            {#                                {% else %}#}
+            {#                                    <a href="/tracker/mifit/" class="btn btn-primary btn-lg">#}
+            {#                                        <i class="glyphicons glyphicons-link"></i> Подключить#}
+            {#                                    </a>#}
+            {#                                {% endif %}#}
+            {#                            {% endif %}#}
+            {##}
+            {#                            {% if user.profile.tracker_brand == 'JAWBONE' %}#}
+            {#                                {% if jawbone_linked %}#}
+            {#                                    <button class="btn btn-success btn-lg" disabled>#}
+            {#                                        <i class="glyphicons glyphicons-tick"></i> Подключено#}
+            {#                                    </button>#}
+            {#                                {% else %}#}
+            {#                                    <a href="/login/jawbone/?next=/settings/" class="btn btn-primary btn-lg">#}
+            {#                                        <i class="glyphicons glyphicons-link"></i> Подключить#}
+            {#                                    </a>#}
+            {#                                {% endif %}#}
+            {##}
+            {#                            {% endif %}#}
+            {#                        </div>#}
+            {#                    </div>#}
+            {#                </div>#}
+            {##}
+            {#            {% endif %}#}
+            <div class="col-lg-6 col-md-8 col-sm-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <div class="panel-title">
+                            Аккаунт Apple ID
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        {% if apple_connected %}
+                            <form action="/disconnect/apple-id/?next=/settings/" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-lg btn-huge btn-social btn-block btn-default center-m"
+                                        style="margin-bottom: 24px;"
+                                        href="">
+                                    <i class="fab fa-apple"></i> Отключить AppleID
+                                    <strong>{{ apple_connected.extra_data.name }}</strong>
+                                </button>
+                            </form>
+                        {% else %}
+                            <p>
+                                Если вы являетесь пользователем устройств Apple и хотите авторизовываться
+                                в мобильном приложении SelfRebootCamp при помощи AppleID,
+                                пожалуйста подключите свой Apple ID к личному кабинету SelfRebootCamp.
+                            </p>
+                            <a class="btn btn-lg btn-huge btn-social btn-default btn-block center-m"
+                               style="margin-bottom: 24px;"
+                               href="/social/register/apple-id/?auth=connect&next=/settings/">
+                                <i class="fab fa-apple"></i> Подключить AppleID
+                            </a>
+                        {% endif %}
+                    </div>
+                    <div class="panel-body">
+                        {% if google_connected %}
+                            <form action="/disconnect/google-oauth2/?next=/settings/" method="post">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-lg btn-huge btn-social btn-block btn-default center-m"
+                                        style="margin-bottom: 24px;"
+                                        href="">
+                                    <i class="fab fa-google"></i> Отключить Google
+                                    <strong>{{ google_connected.uid }}</strong>
+                                </button>
+                            </form>
+                        {% else %}
+                            <p>
+                                Если вы хотите авторизовываться
+                                в SelfRebootCamp при помощи Google,
+                                пожалуйста подключите свою google почту к личному кабинету SelfRebootCamp.
+                            </p>
+                            <a class="btn btn-lg btn-huge btn-social btn-default btn-block center-m"
+                               style="margin-bottom: 24px;"
+                               href="/social/register/google-oauth2/?auth=connect&next=/settings/">
+                                <i class="fab fa-google"></i> Подключить Google
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {#            {% if not instagram_linked %}#}
+            {#                <div class="col-lg-6 col-md-8 col-sm-12">#}
+            {#                    <div class="panel panel-warning">#}
+            {#                        <div class="panel-heading">#}
+            {#                            <div class="panel-title">#}
+            {#                                Безопасное подключение Instagram-аккаунта#}
+            {#                            </div>#}
+            {#                        </div>#}
+            {#                        <div class="panel-body">#}
+            {#                            <ol>#}
+            {#                                <li>#}
+            {#                                    Скопируйте ссылку из текстового поля ниже#}
+            {#                                </li>#}
+            {#                                <div class="input-group">#}
+            {#                                    <input class="form-control"#}
+            {#                                           value="https://lk.selfreboot.camp/instagram/{{ user.profile.instagram_link_code }}/"/>#}
+            {#                                    <form class="input-group-btn" method="post">#}
+            {#                                        {% csrf_token %}#}
+            {#                                        <input type="hidden" name="action" value="ig_link_refresh"/>#}
+            {#                                        <button class="btn btn-warning" type="submit">#}
+            {#                                            <i class="glyphicons glyphicons-refresh"></i>#}
+            {#                                        </button>#}
+            {#                                    </form>#}
+            {#                                </div>#}
+            {##}
+            {#                                <li>#}
+            {#                                    Откройте вкладку браузера в режиме "Инкогнито"#}
+            {#                                </li>#}
+            {#                                <li>#}
+            {#                                    Вставьте скопированную ссылку в адресную строку#}
+            {#                                </li>#}
+            {#                                <li>#}
+            {#                                    Следуйте инструкциям#}
+            {#                                </li>#}
+            {#                                <li>#}
+            {#                                    После того, как инстаграм-аккаунт будет подключен, ваша сессия на сайте#}
+            {#                                    SelfRebootCamp будет автоматически завершена#}
+            {#                                </li>#}
+            {#                                <li>#}
+            {#                                    Закройте все вкладки в режиме "Инкогнито", чтобы завершить#}
+            {#                                    сессию в Instagram#}
+            {#                                </li>#}
+            {#                            </ol>#}
+            {#                        </div>#}
+            {#                    </div>#}
+            {#                </div>#}
+            {#            {% endif %}#}
+        </>
+    </div>
+    <!-- /.container -->
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load bootstrap %}
+{% load static %}
+
+{% block title %}Импорт TrueWeight{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="login-box">
+            <h2 class="login-logo center text-center">
+                Загрузка из TrueWeight
+            </h2>
+            <h4 class="login-logo center text-center">
+                (<a href="http://www.trueweight.net/" target="_blank">Синхронизация с сервером TrueWeight</a>)
+
+                <h4 class="login-logo center text-center">
+                    введите 9-значный код, полученный после экспорта данных из приложения
+                </h4>
+                <div class="login-box-body">
+                    <form method="post" class="text-center center">
+                        {% csrf_token %}
+                        <div class="form-group form-inline form-group-lg">
+                            <div class="input-group input-group-lg">
+                                <input class="form-control" name="trueweight_id" maxlength="3"
+                                       value="{{ trueweight_id.0 }}"/>
+                                <span class="input-group-addon">-</span>
+                                <input class="form-control" name="trueweight_id" maxlength="3"
+                                       value="{{ trueweight_id.1 }}"/>
+                                <span class="input-group-addon">-</span>
+                                <input class="form-control" name="trueweight_id" maxlength="3"
+                                       value="{{ trueweight_id.2 }}"/>
+                            </div>
+                            {% if result.status %}
+                                {% if result.status == 'error' %}
+                                    <div class="panel panel-danger">
+                                        <div class="panel-heading">
+                                            {{ result.message }}
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {% if result.status == 'ok' %}
+                                    <div class="panel panel-success">
+                                        <div class="panel-heading">
+                                            {{ result.message }}
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                            {% endif %}
+                        </div>
+                        <button class="btn btn-success" type="submit" name="action" value="import">
+                            <i class="glyphicons glyphicons-database"></i> Загрузить в базу
+                        </button>
+                        <button class="btn btn-primary" type="submit" name="action" value="export">
+                            <i class="glyphicons glyphicons-download"></i> Скачать CSV
+                        </button>
+                    </form>
+                </div>
+        </div>
+    </div>
+{% endblock %}

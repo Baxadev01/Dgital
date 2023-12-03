@@ -1,0 +1,166 @@
+{
+  "title": null,
+  "yAxis": [
+    {
+      "labels": {
+        "format": "<span style='font-size: 14px; color: black; font-weight: bold'>{value}</span> кг",
+        "style": {
+          "color": "#666666",
+          "fontSize": "11px"
+        }
+      },
+      "title": {
+        "text": "<span style='font-weight: bold'>Вес, кг</span>",
+        "style": {
+          "color": "#333333",
+          "fontSize": "11px"
+        }
+      },
+      "allowDecimals": true,
+      "opposite": false,
+      "alternateGridColor": "#DDDDDD",
+      "height": "60%"
+    },
+    {
+      "gridLineWidth": 0,
+      "title": {
+        "text": "<span style='font-weight: bold'>Жиронакопление</span>",
+        "style": {
+          "color": "#333333",
+          "fontSize": "11px"
+        }
+      },
+      "labels": {
+        "format": "{value}",
+        "style": {
+          "color": "#666666",
+          "fontSize": "11px"
+        }
+      },
+      "floor": 0,
+      "ceil": 3,
+      "max": 3,
+      "tickPositions": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "alternateGridColor": "#DDDDDD",
+      "allowDecimals": false,
+      "opposite": false,
+      "height": "15%",
+      "top": "65%",
+      "offset": 0
+    },
+    {
+      "gridLineWidth": 0,
+      "title": {
+        "text": "<span style='color: #8085e9; font-weight: bold'>Шаги</span>/<span style='color: #f06083; font-weight: bold'>Сон</span>",
+        "style": {
+          "color": "#333333",
+          "fontSize": "11px"
+        }
+      },
+      "labels": {
+        "format": "{value}%",
+        "style": {
+          "color": "#666666",
+          "fontSize": "11px"
+        }
+      },
+      "alternateGridColor": "#DDDDDD",
+      "max": 200,
+      "floor": 0,
+      "ceil": 200,
+      "tickPositions": [
+        0,
+        50,
+        80,
+        100,
+        150,
+        200
+      ],
+      "allowDecimals": false,
+      "opposite": false,
+      "height": "15%",
+      "top": "85%",
+      "offset": 0
+    }
+  ],
+  "xAxis": {
+    "type": "datetime",
+    "dateTimeLabelFormats": {
+      "day": "%d.%m.%Y"
+    }
+  },
+  "chart": {
+    "width": 1200,
+    "height": 675
+  },
+  "tooltip": {
+    "split": false
+  },
+  "legend": {
+    "enabled": false
+  },
+  "series": [
+    {
+      "name": "Вес",
+      "data": null,
+      "dashStyle": "shortdot",
+      "tooltip": {
+        "valueDecimals": 1
+      },
+      "yAxis": 0
+    },
+    {
+      "name": "TrueWeight",
+      "data": null,
+      "type": "line",
+      "threshold": null,
+      "tooltip": {
+        "valueDecimals": 1
+      },
+      "yAxis": 0
+    },
+    {
+      "name": "Рацион",
+      "data": null,
+      "type": "column",
+      "tooltip": {
+        "valueDecimals": 0
+      },
+      "yAxis": 1
+    },
+    {
+      "name": "Жиронакопительные действия",
+      "data": null,
+      "type": "column",
+      "tooltip": {
+        "valueDecimals": 0
+      },
+      "yAxis": 1
+    },
+    {
+      "name": "Активность",
+      "data": null,
+      "type": "spline",
+      "threshold": null,
+      "tooltip": {
+        "valueDecimals": 0
+      },
+      "yAxis": 2
+    },
+    {
+      "name": "Сон",
+      "data": null,
+      "type": "spline",
+      "threshold": 1,
+      "tooltip": {
+        "valueDecimals": 0
+      },
+      "yAxis": 2
+    }
+  ]
+}

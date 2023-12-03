@@ -1,0 +1,120 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+{% block title %}
+    Автоанализ
+{% endblock %}
+
+{% block css_block %}
+    <link href="{% static 'css/datatables.min.css' %}" rel="stylesheet"/>
+    <style>
+        .achtung {
+            background-color: #d58512;
+        }
+    </style>
+{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid wrapper">
+        <div class="panel panel-primary">
+            <nav class="panel-heading nav navbar-primary">
+                <div class="container-fluid">
+
+                </div>
+                <!-- /.container -->
+
+            </nav>
+        </div>
+        <div class="panel-body">
+            <table id="srbc_users" class="table table-striped">
+                <thead>
+                <tr>
+                    <th><i class="glyphicons glyphicons-warning-sign"></i></th>
+                    <th>Username</th>
+                    <th>Поток</th>
+                    <th>Дата начала</th>
+                    <th>Тимлид</th>
+                    <th style="width: 20%">Рекомендация (авто)</th>
+                    <th style="width: 20%">Последняя рекомендация (ручная)</th>
+                    <th>Автор рекомендации</th>
+                    <th>Дата рекомендации</th>
+                    <th>Отладочная информация</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for srbc_user in srbc_users %}
+                    <tr data-user-id="{{ srbc_user.pk }}"
+                        data-user-username="{{ srbc_user.username }}">
+                        <td>
+                            {% if srbc_user.profile.warning_flag == 'TEST' %}
+                                <span class="text-warning signal_lights" title="Рекомендованы анализы">
+                                <span>1</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                            {% if srbc_user.profile.warning_flag == 'OBSERVATION' %}
+                                <span class="text-primary signal_lights" title="В зоне риска">
+                                <span>2</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                            {% if srbc_user.profile.warning_flag == 'TREATMENT' %}
+                                <span class="text-success signal_lights" title="Проходит лечение">
+                                <span>3</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                            {% if srbc_user.profile.warning_flag == 'DANGER' %}
+                                <span class="text-danger signal_lights" title="Нужно лечение!">
+                                <span>0</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                            {% if srbc_user.profile.warning_flag == 'OK' %}
+                                <span class="text-hidden signal_lights" title="Всё ОК">
+                                <span>4</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/profile/{{ srbc_user.username}}/"
+                               target="_blank"
+                            >{{ srbc_user.username }}</a>{% if srbc_user.profile.is_in_club %}&nbsp;<i
+                                class="bookmark glyphicons glyphicons-cup"></i>{% endif %}
+                        </td>
+                        <td>{{ srbc_user.profile.wave.title }}</td>
+                        <td>{{ srbc_user.profile.wave.start_date|date:"Y-m-d" }}</td>
+                        <td style="font-weight: bold;">{{ srbc_user.profile.group_leader.username }}</td>
+                        <td {% if srbc_user.autoanalize.recommendation.attention_required %}class="achtung"{% endif %}>
+                            {{ srbc_user.autoanalize.recommendation.comment }}
+                            <em>[{{ srbc_user.autoanalize.formula }}]</em>
+                        </td>
+                        <td>
+                            {{ srbc_user.last_note.content }}
+                        </td>
+                        <td>
+                            {{ srbc_user.last_note.author.username }}
+                        </td>
+                        <td>
+                            {{ srbc_user.last_note.date_added|date:"Y-m-d" }}
+                        </td>
+                        <td>
+                            <em>
+                                [{{ srbc_user.autoanalize.dm }}
+                                V
+                                {{ srbc_user.autoanalize.dm_control_value|floatformat:2 }}
+                                | {{ srbc_user.autoanalize.formula_debug }}]</em>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}
+
+{% block js_block %}
+    <script src="{% static 'js/datatables.min.js' %}"></script>
+    <script src="{% static 'js/charts/highstock.js' %}"></script>
+    <script src="{% static 'js/typeahead.js' %}"></script>
+    <script src="{% static 'js/users_list_analize.min.js' %}"></script>
+{% endblock %}

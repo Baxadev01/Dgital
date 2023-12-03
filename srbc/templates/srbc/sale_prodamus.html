@@ -1,0 +1,431 @@
+{% extends "srbc/base.html" %}
+{% load static bootstrap %}
+{% load dateformat %}
+{% block title %}
+  Создание Payment с оплатой через Prodamus
+{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="alert alert-success alert-success-copy text-center" role="alert">
+    Ссылка скопирована в буфер обмена
+  </div>
+  <div id="created-link" >
+      
+      <input class="form-control " id="link" type="text" placeholder="" readonly>
+      <button type="button" id="copy-link" class="btn btn-success mt-4 w-100" style="width: 100%;">Скопировать ссылку</button>
+    
+  </div>
+  <div id="form-create-link">
+    <h3 class="mb-5">Создать ссылку для оплаты</h3>
+    <form action="" id="form">
+      {% csrf_token %}
+
+      {% for f in form %}
+
+        {% if f.name == "user" %}
+
+        <div class="dropdown mb-3">
+          <label class="control-label  " for="{{f.id_for_label}}">{{f.label}}</label><br>
+          <select class="form-control" name="{{f.name}}" type="button" id="dropdown_user" data-toggle="dropdown" aria-haspopup="true"
+          aria-expanded="false">
+            <option value="0" selected="">Не выбрано</option>
+          </select>
+            <div id="menu" class="dropdown-menu" aria-labelledby="dropdown_user">
+                <input type="search" class="form-control" id="searchUser" placeholder="Search..." autofocus="autofocus">
+                <div id="menuItemsUser" class="menuItems"></div>
+                <div id="emptyUser" class="dropdown-header">No users found</div>
+            </div>
+        </div>
+
+        {% elif f.name == "tariff" %}
+
+        <div class="form-group">
+          <label class="control-label  " for="{{f.id_for_label}}">{{f.label}}</label>
+          <div class=" ">
+              <select name="{{f.name}}" id="{{f.id_for_label}}" class=" form-control" required="" >
+                <option value="0" selected="">Не выбрано</option>
+                {% for option in f.field.queryset %}
+                  <option value="{{ option.id }}" data-price-rub="{{ option.fee_rub }}" data-duration-unit="{{ option.duration_unit }}" data-duration="{{ option.duration }}" data-is-wave="{{ option.tariff_group.is_wave }}">{{ option.title }}</option>
+                {% endfor %}
+              </select>
+          </div>
+        </div>
+
+        {% elif f.name == "wave" %}
+        <!-- <div class="form-group form-group-wave">
+          <label class="control-label  " for="{{f.id_for_label}}">{{f.label}}</label>
+          <div class=" ">
+              <select name="{{f.name}}" id="{{f.id_for_label}}" class=" form-control" required="" >
+                <option value="0" selected="">Не выбрано</option>
+                {% for option in f.field.queryset %}
+                  <option value="{{ option.id }}" data-start-date="{{ option.start_date|dateformat }}">{{ option.title }}</option>
+                {% endfor %}
+              </select>
+          </div>
+        </div> -->
+
+        <div class="dropdown mb-3 form-group-wave">
+          <label class="control-label  " for="{{f.id_for_label}}">{{f.label}}</label><br>
+          <select class="form-control" name="{{f.name}}" type="button" id="dropdown_wave" data-toggle="dropdown" aria-haspopup="true"
+          aria-expanded="false">
+            <option value="0" selected="">Не выбрано</option>
+          </select>
+            <div id="menu" class="dropdown-menu" aria-labelledby="dropdown_wave">
+                <input type="search" class="form-control" id="searchWave" placeholder="Search..." autofocus="autofocus">
+                <div id="menuItemsWave" class="menuItems"></div>
+                <div id="emptyWave" class="dropdown-header">No wave found</div>
+            </div>
+        </div>
+
+
+        {% else %}
+          {{f|bootstrap}}
+        {% endif %}
+      {% endfor %}
+
+      
+      
+    </form>
+    <div class="col-4 text-center"> 
+      <button type="button" id="button-sumbit" class="btn btn-primary" style="width: 100%;">Создать ссылку</button>
+    </div>
+  </div>
+</div>
+        
+{% endblock %}
+
+
+
+{% block css_block %}
+<style>
+.alert-success-copy{
+  position: absolute;
+  left: 0;
+  width: 100%;
+  display: none;
+}
+
+#created-link{
+  height: 100%;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+#form-create-link{
+  height: 100%;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.container{
+  max-width: 600px;
+  height: 85vh;
+  top: 0
+}
+
+.form-group-wave{
+  display: none;
+}
+
+.menuItems{
+  max-height: 60vh;
+  overflow: auto;
+}
+
+#menu{
+  min-width: 100%;
+}
+
+.dropdown-item{
+  padding: 10px 20px ;
+  position: relative;
+  cursor: pointer;
+}
+
+.dropdown-item::before{
+  content: '';
+  top:0;
+  left: 0;
+  display: none;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.dropdown-item:hover::before{
+  display: block;
+}
+
+</style>
+{% endblock %}
+
+
+{% block js_block %}
+<script>
+$('#copy-link').click(()=>{
+  var $input = $("#link");
+  navigator.clipboard.writeText($input.val())
+  $('.alert-success-copy').show()
+  setTimeout(()=>{
+    $('.alert-success-copy').hide()
+  }, 5000)
+})
+
+$("#button-sumbit").click(function(){
+
+  data = $('#form').serializeArray()
+  const cleanData = {}
+  data.map((el)=> {
+    cleanData[el.name]= el.value
+  })
+  if(Number(cleanData['wave']) === 0){
+    delete cleanData['wave']
+  }
+
+  if ($('#{{form.tariff.id_for_label}}').children('option:selected').data('is-wave') === 'True' && !cleanData['wave']){
+    alert('ERROR: Для выбранного тарифа должен быть указан Wave')
+    return
+  }
+  if(Number(cleanData['price_rub']) < 50){
+    alert('ERROR: Цена должна быть не меньше 50 рублей')
+    return
+  }
+
+  for (let key of Object.keys(cleanData)){
+    if(!cleanData[key] || cleanData[key] === '0'){
+      alert('ERROR: Все поля должны быть заполнены')
+      return
+    }
+  }
+
+  $.ajax({
+    url: "/api/v3/prodamus/payment/create/",
+    method: 'post',
+    data: cleanData,
+    success: function(data){
+      $('#link').val(data.url)
+      $('#form-create-link').hide()
+      $('#created-link').css("display", "flex");
+     
+    }
+  });
+  
+});
+
+$('#{{form.tariff.id_for_label}}').change(function(){
+  const waveEl = $('#dropdown_wave')
+  const startDateEl = $('#{{form.date_start.id_for_label}}')
+  const endDateEl = $('#{{form.date_end.id_for_label}}')
+  const priceRubEl = $('#{{form.price_rub.id_for_label}}')
+
+  waveEl.val(0)
+  priceRubEl.val($(this).children('option:selected').data('price-rub'))
+
+  if ($(this).children('option:selected').data('is-wave') === 'True' || $(this).children('option:selected').val() === '0'){
+    $('.form-group-wave').css({"display":"block"})
+    startDateEl.val('')
+    endDateEl.val('') 
+  } else {
+    $('.form-group-wave').css({"display":"none"})
+    
+    const startDate = new Date()
+    const endDate = new Date()
+    const tariffEl = $(this).children('option:selected')
+
+    let duration = Number(tariffEl.data('duration'))
+    const durationUnit = tariffEl.data('duration-unit')
+
+    if(durationUnit==='WEEK'){
+      endDate.setDate(endDate.getDate() + duration * 7);
+    } else if (durationUnit==='MONTH'){
+      endDate.setMonth(endDate.getMonth() + duration)
+    } else if (durationUnit === 'DAY'){
+      endDate.setDate(endDate.getDate() + duration );
+    }
+
+    startDateEl.val(startDate.toLocaleDateString('sv'))
+    endDateEl.val(endDate.toLocaleDateString('sv')) 
+  }
+  
+});
+
+
+const dict_dropdown = [
+  {
+    dropdown: '#dropdown_user',
+    menuItems: '#menuItemsUser',
+    search: '#searchUser',
+    api: "/api/v3/staff/tools/users",
+    empty: '#emptyUser',
+    type: 'user'
+  },
+  {
+    dropdown: '#dropdown_wave',
+    search: '#searchWave',
+    menuItems: '#menuItemsWave',
+    api: "/api/v3/staff/tools/waves",
+    empty: '#emptyWave',
+    type: 'wave'
+  },
+]
+
+
+////////////////////////////////////////
+dict_dropdown.map((item) => {
+  $(item.dropdown).on('mousedown', function(e) {
+   e.preventDefault();
+   this.blur();
+   window.focus();
+});
+})
+
+
+//Initialize with the list of symbols
+
+//Find the input search box
+
+//Find every item inside the dropdown
+
+function buildDropDown(values, dict) {
+    let contents = []
+    for (let i of values) {
+      if (dict.type == 'user'){
+        contents.push(`<div type="button" data-id="${i.id}" class="dropdown-item" type="button" >${i.username} (#${i.id})</div>`)
+      } else if (dict.type == 'wave'){
+        contents.push(`<div type="button" data-id="${i.id}" class="dropdown-item" type="button"  data-start-date="${i.start_date}">${i.title}</div>`)
+      }
+      
+    }
+    $(dict.menuItems).append(contents.join(""))
+
+    //Hide the row that shows no items were found
+    $(dict.empty).hide()
+}
+
+//Capture the event when user types into the search box
+var typingTimer;                //timer identifier
+var doneTypingInterval = 400;//time in ms, 5 second for example
+
+dict_dropdown.map((item) => {
+  var $input = $(item.search);
+
+  function doneTyping () {
+    const value = $input.val().trim().toLowerCase()
+    $.ajax({
+      url: item.api,
+      method: 'get',
+      data: {
+        search: value,
+      },
+      success: function(data){
+        filter(data.results, item)
+      }
+    });
+  }
+  
+  //on keyup, start the countdown
+  $input.on('keyup', function () {
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(doneTyping, doneTypingInterval);
+  });
+
+  //on keydown, clear the countdown 
+  $input.on('keydown', function () {
+    clearTimeout(typingTimer);
+  });
+
+})
+
+
+
+
+
+//For every word entered by the user, check if the symbol starts with that word
+//If it does show the symbol, else hide it
+function filter(result, dict) {
+    let length = result.length
+    
+    $(dict.menuItems).empty();
+
+    let contents = []
+    for (let i of result) {
+      if (dict.type == 'user'){
+        contents.push(`<div type="button" data-id="${i.id}" class="dropdown-item" type="button" >${i.username} (#${i.id})</div>`)
+      } else if (dict.type = 'wave') {
+        contents.push(`<div type="button" data-id="${i.id}" class="dropdown-item" type="button"  data-start-date="${i.start_date}">${i.title}</div>`)
+      }
+      
+    }
+
+    $(dict.menuItems).append(contents.join(""))
+
+    //If all items are hidden, show the empty view
+    if (length === 0) {
+      $(dict.empty).show()
+      }
+      else {
+      $(dict.empty).hide()
+    }
+}
+
+//If the user clicks on any item, set the title of the button as the text of the item
+dict_dropdown.map((item) => {
+  $(item.menuItems).on('click', '.dropdown-item', function(){
+      const select = $(item.dropdown);
+      select.empty();
+      select.append('<option value="0" selected="">Не выбрано</option>')
+      if(item.type == 'user'){
+        select.append(`<option value="${$(this)[0].dataset.id}" >${$(this)[0].textContent}</option>`);
+      } else if (item.type == 'wave'){
+        select.append(`<option value="${$(this)[0].dataset.id}">${$(this)[0].textContent}</option>`);
+
+        const tariffEl = $('#{{form.tariff.id_for_label}}').children('option:selected')
+
+        let duration = Number(tariffEl.data('duration'))
+        const durationUnit = tariffEl.data('duration-unit')
+        console.log(durationUnit)
+
+        const startDate = new Date($(this)[0].dataset.startDate)
+        const endDate = new Date($(this)[0].dataset.startDate)
+
+        if(durationUnit==='WEEK'){
+          endDate.setDate(endDate.getDate() + duration * 7);
+        } else if (durationUnit==='MONTH'){
+          endDate.setMonth(endDate.getMonth() + duration)
+        } else if (durationUnit === 'DAY'){
+          endDate.setDate(endDate.getDate() + duration );
+        }
+
+        $('#{{form.date_start.id_for_label}}').val(startDate.toLocaleDateString('sv'))
+        $('#{{form.date_end.id_for_label}}').val(endDate.toLocaleDateString('sv'))
+      }
+      
+      select.val($(this)[0].dataset.id)
+      select.dropdown('toggle');
+  })
+})
+
+dict_dropdown.map((item) => {
+  $.ajax({
+    url: item.api,
+    method: 'get',
+    data: {
+      search: ''
+    },
+    success: function(data){
+      console.log(data.results);
+      buildDropDown(data.results, item)
+    }
+  });
+})
+
+
+</script>
+{% endblock %}

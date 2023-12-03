@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load bootstrap %}
+{% load static %}
+
+{% block title %}Подключение MiFit{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="login-box">
+            <h2 class="login-logo center text-center">
+                Подключение аккаунта MiFit
+            </h2>
+            <h4 class="login-logo center text-center">
+                (<a href="{% static 'images/howto/mifit_uid.jpg' %}"
+                    target="_blank">Как найти свой UID в MiFit?
+            </a>)
+            </h4>
+            <div class="login-box-body">
+                <form method="post" class="text-center center">
+                    {% if not mifit_linked %}
+                        {% csrf_token %}
+                        <div class="form-group form-group-lg">
+                            <label for="mifit_username_field">Имя пользователя в MiFit</label>
+                            <input class="form-control" id="mifit_username_field" name="mifit_username"
+                                   value="{{ mifit_username }}"/>
+                        </div>
+                        <div class="form-group form-group-lg">
+                            <label for="mifit_username_field">UID</label>
+                            <input class="form-control" id="mifit_uid_field"
+                                   name="mifit_uid" value="{{ mifit_uid }}"/>
+                        </div>
+                    {% endif %}
+                    {% if result.status %}
+                        {% if result.status == 'error' %}
+                            <div class="panel panel-danger">
+                                <div class="panel-heading">
+                                    {{ result.message }}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if result.status == 'ok' %}
+                            <div class="panel panel-success">
+                                <div class="panel-heading">
+                                    Запрос на добавление в друзья от имени бота был отправлен. <br/>
+                                    Если получишь уведомление в MiFit – подтверди его.<br/>
+                                    Твои данные по шагам и сну теперь несколько раз в день подгружаются
+                                    автоматически.<br/>
+                                    <br/>
+                                    И не забывай синхронизировать трекер!
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if not mifit_linked %}
+                        <button class="btn btn-success" type="submit" name="action" value="connect">
+                            <i class="glyphicons glyphicons-link"></i> Подключить
+                        </button>
+                    {% else %}
+                        <span class="btn btn-default" disabled="">
+                            <i class="glyphicons glyphicons-link"></i> Уже подключен
+                        </span>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

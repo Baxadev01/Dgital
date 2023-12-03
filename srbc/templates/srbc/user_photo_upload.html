@@ -1,0 +1,122 @@
+{% extends "srbc/base.html" %}
+{% load static bootstrap %}
+
+{% block title %}
+    Контрольные фотографии
+{% endblock %}
+{% block navbar_bottom %}{% endblock %}
+{% block css_block %}
+{% endblock %}
+
+{% block js_block %}
+    <script src="{% static 'js/libs/exif.min.js' %}?v=2.2.1"></script>
+    <script src="{% static 'js/moment.min.js' %}"></script>
+    <script src="{% static 'js/libs/cryptojs/md5.min.js' %}"></script>
+    <script src="{% static 'js/user_photo_upload.min.js' %}?v=20180401214911"></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("form").submit(function () {
+                $('button[type=submit]').prop('disabled',true);
+                return true;
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid">
+        {% if action == 'form' %}
+            <form class="panel panel-default" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="panel-heading">
+                    <div class="panel-title">
+                        <h2 class="row">
+                            <span class="col-sm-6 col-xs-9">
+                                Загрузка фотографий /
+                                <a href="/checkpoints/photos/" style="font-size: 22px;">Редактор коллажей</a></span>
+                            <span class="col-sm-6 col-xs-3 text-right">
+                                <a class="btn btn-lg btn-primary" href="/articles/photos/" target="_blank">
+                                    <i class="glyphicons glyphicons-question-sign"></i>
+                                    <span class="hidden-xs">Как правильно фотографироваться</span>
+                                </a>
+                            </span>
+                        </h2>
+                    </div>
+                </div>
+                {% if error %}
+                    <div class="panel-body bg-danger text-danger">
+                        <strong>{{ error }}</strong>
+                    </div>
+                {% endif %}
+                <div class="panel-body bg-danger text-danger" id="photo_error_container"
+                     style="font-weight: bolder; display: none;"></div>
+                <div class="panel-body bg-info text-info" id="photo_date_container"
+                     style="font-weight: bolder; display: none;"></div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
+                            <label class="col-xs-4 checkpoint-photo-preview">
+                                <div class="annotation">
+                                    Вид спереди
+                                </div>
+
+                                <img id="image_preview_face"
+                                     style="max-width: 100%; height: auto; position: absolute; top: 0; left: 0"
+                                />
+                                <input type="file" name="face" id="file_face" accept="image/*"
+                                       style="position: absolute; bottom: 0; left: 0"/>
+                            </label>
+                            <label class="col-xs-4 checkpoint-photo-preview">
+                                <div class="annotation">
+                                    Вид сбоку
+                                </div>
+                                <img id="image_preview_side"
+                                     style="max-width: 100%; height: auto; position: absolute; top: 0; left: 0"
+                                />
+                                <input type="file" name="side" id="file_side" accept="image/*"
+                                       style="position: absolute; bottom: 0; left: 0"/>
+                            </label>
+                            <label class="col-xs-4 checkpoint-photo-preview">
+                                <div class="annotation">
+                                    Вид сзади
+                                </div>
+                                <img id="image_preview_rear"
+                                     style="max-width: 100%; height: auto; position: absolute; top: 0; left: 0"
+                                />
+                                <input type="file" name="rear" id="file_rear" accept="image/*"
+                                       style="position: absolute; bottom: 0; left: 0"/>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-footer">
+                    <div class="row">
+                        <div class="col-xs-6 text-left">
+                            {% if not readonly %}
+                                <button type="submit" class="btn btn-lg btn-primary" id="photo_submit" disabled>
+                                    <i class="glyphicons glyphicons-floppy-disk"></i> Сохранить
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </form>
+        {% else %}
+            <div class="panel panel-default panel-success">
+                <div class="panel-heading">
+                    <div class="panel-title">
+                        <h2 class="row">
+                            <span class="col-sm-6 col-xs-9">Контрольные фотографии</span>
+                        </h2>
+                    </div>
+                </div>
+                <div class="panel-body bg-success text-success">
+                    Контрольные фотографии за {{ checkpoint_date|date:"d.m.Y" }} успешно загружены
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    <!-- /.container -->
+{% endblock %}

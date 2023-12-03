@@ -1,0 +1,83 @@
+{% extends "srbc/base.html" %}
+{% load static bootstrap %}
+{% block title %}
+    Редактор планового анализа
+{% endblock %}
+
+{% block css_block %}
+    <link href="{% static 'css/jquery-ui.min.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block js_block %}
+    <script>
+        function addTemplate(tid) {
+            var text_to_add = document.getElementById('template_' + tid).innerText;
+            document.getElementById('id_content').value = document.getElementById('id_content').value + text_to_add + "\n";
+            return false;
+        }
+    </script>
+{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid">
+        <div class="row">
+            <div id="srbc_user_data" class="col-xs-12">
+                <div class="text-center {{ ruser.profile.header_class }}">
+                    <!-- @formatter:off -->
+                    <h3>{% if ruser.profile.is_perfect_weight %}<i
+                            class="glyphicons glyphicons-certificate" title="Идеальный вес"
+                    ></i>&nbsp;{% endif %}{% if ruser.profile.is_pregnant %}<i
+                            class="glyphicons glyphicons-stroller" title="Особый случай"
+                    ></i>&nbsp;{% endif %}@{{ ruser.username }}<span
+                            class="small">({{ ruser.profile.wave.title }}) #{{ ruser.pk }}</span></h3>
+                    <!-- @formatter:on -->
+                </div>
+
+            </div>
+
+        </div>
+        <div class="row">
+            <div class="col-xs-12 col-sm-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        Шаблоны
+                    </div>
+                    <div class="panel-body">
+                        <ul class="panel-body list-group">
+                            {% for template in templates %}
+                                <li class="list-group-item list-group-item-{{ template.display_mode }}">
+                                    {{ template.title }}
+                                    <div id="template_{{ template.pk }}" style="display: none">{{ template.text }}</div>
+                                    <div class="btn btn-default btn-xs pull-right"
+                                         onclick=" return addTemplate({{ template.pk }});">
+                                        Добавить &gt;&gt;&gt;
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12 col-sm-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        Текст анализа
+                    </div>
+
+                    <form method="post" class="panel-body">
+                        {% csrf_token %}
+                        {{ form|bootstrap }}
+
+                        <button class="btn btn-warning pull-left" type="submit" name="action" value="add">
+                            <i class="glyphicons glyphicons-magic"></i> ВЖУХ!
+                        </button>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "srbc/base.html" %}
+{% load static bootstrap %}
+{% block title %}
+    Модерация продуктов
+{% endblock %}
+
+{% block css_block %}
+{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid wrapper" style="padding-top: 15px;">
+        {% if form %}
+            {{ form.title.disabled }}
+            <form method="post">
+                {% csrf_token %}
+                {{ form|bootstrap }}
+                <div class='buttons form-group'>
+                    <button type='submit' class="btn btn-success" {% if ticket.read_only %}disabled{% endif %}>
+                        <i class="glyphicons glyphicons-floppy-disk"></i> Сохранить изменения
+                    </button>
+                </div>
+
+            </form>
+        {% else %}
+            <h1>Нет заявок на модерацию</h1>
+        {% endif %}
+    </div>
+    <!-- /.container -->
+{% endblock %}
+
+{% block js_block %}
+    <script type="text/javascript" src="/static/admin/js/vendor/jquery/jquery.js"></script>
+    {{ form.media }}
+{% endblock %}

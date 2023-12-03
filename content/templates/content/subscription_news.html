@@ -1,0 +1,145 @@
+{% load static %}{% load i18n %}
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Подписка на новости – #SelfRebootCamp</title>
+
+    <!-- CSS -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto:400,100,300,500" rel="stylesheet">
+    <link href="{% static 'css/lp-bootstrap.min.css' %}?v=201710232236" rel="stylesheet">
+    <link href="{% static 'css/lp-animate.min.css' %}?v=201710232236" rel="stylesheet">
+    <link href="{% static 'css/lp-style.min.css' %}?v=201710232236" rel="stylesheet">
+    <link href="{% static 'css/lp-media-queries.min.css' %}?v=201710232236" rel="stylesheet">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="{% static 'icons/apple-touch-icon-57x57.png' %}"/>
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="{% static 'icons/apple-touch-icon-114x114.png' %}"/>
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="{% static 'icons/apple-touch-icon-72x72.png' %}"/>
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="{% static 'icons/apple-touch-icon-144x144.png' %}"/>
+    <link rel="apple-touch-icon-precomposed" sizes="60x60" href="{% static 'icons/apple-touch-icon-60x60.png' %}"/>
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="{% static 'icons/apple-touch-icon-120x120.png' %}"/>
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="{% static 'icons/apple-touch-icon-76x76.png' %}"/>
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="{% static 'icons/apple-touch-icon-152x152.png' %}"/>
+    <link rel="icon" type="image/png" href="{% static 'icons/favicon-196x196.png' %}" sizes="196x196"/>
+    <link rel="icon" type="image/png" href="{% static 'icons/favicon-96x96.png' %}" sizes="96x96"/>
+    <link rel="icon" type="image/png" href="{% static 'icons/favicon-32x32.png' %}" sizes="32x32"/>
+    <link rel="icon" type="image/png" href="{% static 'icons/favicon-16x16.png' %}" sizes="16x16"/>
+    <link rel="icon" type="image/png" href="{% static 'icons/favicon-128.png' %}" sizes="128x128"/>
+    <meta name="application-name" content=“SelfRebootCamp”/>
+    <meta name="msapplication-TileColor" content="#FFFFFF"/>
+    <meta name="msapplication-TileImage" content="{% static 'icons/mstile-144x144.png' %}"/>
+    <meta name="msapplication-square70x70logo" content="{% static 'icons/mstile-70x70.png' %}"/>
+    <meta name="msapplication-square150x150logo" content="{% static 'icons/mstile-150x150.png' %}"/>
+    <meta name="msapplication-wide310x150logo" content="{% static 'icons/mstile-310x150.png' %}"/>
+    <meta name="msapplication-square310x310logo" content="{% static 'icons/mstile-310x310.png' %}"/>
+</head>
+
+<body>
+
+<div class="loader">
+    <div class="loader-img"></div>
+</div>
+
+<div class="top-content">
+
+    <div class="inner-bg">
+        <div class="container">
+
+            <div class="row">
+                <div class="col-sm-8 col-sm-offset-2 text wow fadeInLeft">
+                    <h1><strong>Подписка на новости SelfRebootCamp</strong></h1>
+                    <div class="description">
+                        <p>
+                            Заполните эту форму, чтобы получать нашу рассылку - статьи и заметки, знания и отзывы,
+                            новости проекта и уведомления о новых стартах.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-6 col-sm-offset-3 subscribe wow fadeInUp" id="mc_embed_signup">
+                    <form role="form"
+                          action="https://club.us11.list-manage.com/subscribe/post?u=b4787c42f6656656464748bfd&amp;id=a741916fea"
+                          method="post"
+                          id="mc-embedded-subscribe-form"
+                          name="mc-embedded-subscribe-form"
+                          class="validate"
+                          novalidate
+                    >
+                        <div class="form-group">
+                            <label class="sr-only" for="subscribe-email">e-mail</label>
+                            <input type="text" name="EMAIL" placeholder="Электронная почта"
+                                   class="subscribe-email form-control" id="mce-EMAIL"/>
+                        </div>
+                        <div class="form-group">
+                            <label class="sr-only" for="subscribe-name">Имя</label>
+                            <input type="text" name="FNAME" placeholder="Имя"
+                                   class="subscribe-name form-control" id="mce-FNAME"/>
+                        </div>
+                        <div class="form-group">
+                            <label class="sr-only" for="subscribe-name">Фамилия</label>
+                            <input type="text" name="LNAME" placeholder="Фамилия"
+                                   class="subscribe-name form-control" id="mce-LNAME"/>
+                        </div>
+                        <div style="position: absolute; left: -5000px;" aria-hidden="true">
+                            <input type="text" name="b_b4787c42f6656656464748bfd_a741916fea" tabindex="-1" value=""/>
+                        </div>
+
+                        <button type="submit" class="btn">Подписаться на рассылку</button>
+                    </form>
+                    <div class="submit-result">
+                        <div class="submit-result-message"></div>
+                    </div>
+                    <div id="mce-responses" class="clear">
+                        <div class="response" id="mce-error-response" style="display:none"></div>
+                        <div class="response" id="mce-success-response" style="display:none"></div>
+                    </div>
+                </div>
+                <script type='text/javascript'
+                        src='//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js'></script>
+                <script type='text/javascript'>
+                    (
+                        function ($) {
+                            window.fnames = [];
+                            window.ftypes = [];
+                            fnames[0] = 'EMAIL';
+                            ftypes[0] = 'email';
+                            fnames[1] = 'FNAME';
+                            ftypes[1] = 'text';
+                            fnames[2] = 'LNAME';
+                            ftypes[2] = 'text';
+                        }(jQuery)
+                    );
+                    var $mcj = jQuery.noConflict(true);
+                </script>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>
+<script>
+    var BG_IMG_URL = '{% static 'i/lp_background.jpg' %}';
+</script>
+<script src="{% static 'js/jquery-1.11.1.min.js' %}"></script>
+<script src="{% static 'js/jquery.backstretch.min.js' %}?v=201710232236"></script>
+<script src="{% static 'js/wow.min.js' %}?v=201710232236"></script>
+<script src="{% static 'js/lp-scripts.min.js' %}?v=201710232236"></script>
+
+<!--[if lt IE 10]>
+<script src="{% static 'js/placeholder.min.js' %}?v=201710232236"></script>
+<![endif]-->
+</body>
+</html>

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load bootstrap %}
+{% load static %}
+
+{% block title %}Представьтесь, пожалуйста{% endblock %}
+
+{% block css_block %}
+    <link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap-social.css' %}">
+{% endblock %}
+{% block content %}
+    <div class="container-fluid">
+        {% if not user.profile.wave %}
+            {% include "blocks/progress_bar.html" %}
+        {% endif %}
+
+        <h2 class="login-logo">
+            Представьтесь, пожалуйста
+        </h2>
+        <div class="panel panel-primary">
+            <div class="panel-heading bg-primary text-primary">
+                <p><strong>
+                    Пожалуйста, введите реальные имя и фамилию.
+                </strong></p>
+                <p>
+                    Мы просим не использовать псевдонимы: в этом случае все официальные вопросы будет намного сложнее
+                    решать.
+                </p>
+                <p>
+                    Данные в этой форме видны только Вам и команде, посторонние люди не будут знать о Вашем участии в
+                    проекте, пока Вы сами не захотите об этом рассказать.
+                </p>
+            </div>
+
+        </div>
+        <div class="login-box-body">
+            <form method="post">
+                {% csrf_token %}
+                {{ form|bootstrap }}
+                <button class="btn btn-primary pull-left" type="submit">
+                    Продолжить <i class="glyphicons glyphicons-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

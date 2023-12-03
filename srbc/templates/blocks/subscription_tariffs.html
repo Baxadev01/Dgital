@@ -1,0 +1,65 @@
+{% load static bootstrap %}
+
+<div class="checkbox-list">
+    <input type="checkbox" name="meeting_access" id="meeting_access" onchange="return change_price()"><h4>Доступ к лекциям</h4>
+    <input type="checkbox" name="diary_access" id="diary_access" onchange="return change_price()"><h4>Ведение пищевого дневника</h4>
+</div>
+<ul class="row radio-list" style="margin-left: 10px; margin-top: -10px; display:none" id="diary_access_choise">
+    <li class="col-xs-12">
+        <div class="form-group">
+            <div class="radio">
+                <div>
+                    <label>
+                        <input type="radio" name="diary_access_mode" id='diary_access_mode_WRITE' value="WRITE" onclick="return change_price()" checked/>
+                        <h5 style="margin-top: 2px;">Только дневник
+                        <span class="d-inline-block" tabindex="0" data-toggle="tooltip" title="Вы ведете пищевой дневник для себя, его анализ не проводится">
+                                <i class="glyphicon glyphicon-question-sign" style="pointer-events: none;"></i>
+                            </span>
+                        </h5>
+                    </label>
+                </div>
+                {% comment %} <div>
+                    <label>
+                        <input type="radio" name="diary_access_mode" id='diary_access_mode_ANLZ_AUTO' value="ANLZ_AUTO" onclick="return change_price()"/>
+                        <h5 style="margin-top: 2px;">Краткий анализ
+                        <span class="d-inline-block" tabindex="0" data-toggle="tooltip" title="Система анализирует пищевой дневник и выводит список факторов накопления жира">
+                                <i class="glyphicon glyphicon-question-sign" style="pointer-events: none;"></i>
+                            </span>
+                        </h5>
+                    </label>
+                </div>  {% endcomment %}
+                <div>
+                    <label>
+                        <input type="radio" name="diary_access_mode" id='diary_access_mode_ANLZ_MANUAL' value="ANLZ_MANUAL" onclick="return change_price()"/>
+                        <h5 style="margin-top: 2px;">Полный анализ
+                        <span class="d-inline-block" tabindex="0" data-toggle="tooltip" title="Система анализирует пищевой дневник и выводит подробный результат, включая степень соответствия концепции selfrebootcamp">
+                                <i class="glyphicon glyphicon-question-sign" style="pointer-events: none;"></i>
+                            </span>
+                        </h5>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </li>
+</ul>
+
+<div id="subscription_price" style="margin-left:20px"></div>
+<div id="subscription_pay_warning"style="display: none; margin: 20px;" ></div>
+<h6 id="nds" style="display: none; margin-left:20px">*Плюс НДС, если банк-эмитент вашей карты находится в Евросоюзе </h6>
+<div id="stripe_is_loading" class="my-5 py-5" style="display: none;">
+    <img src="{% static 'i/loading.gif' %}" class="center-block"/>
+</div>   
+<div id='subscription_pay'  style="display: none;">
+    <div class="panel-footer" style="text-align: center;">
+        <p style="text-align: margin-top: 16px">
+            <button id="stripe_subscription_save_button" class="btn btn-lg stripe-button">
+                Оформить подписку с иностранной карты
+            </button>
+        </p>
+        <p style="text-align: margin-top: 16px">
+            <button id="yandex_subscription_save_button" class="btn btn-lg yookassa">
+                Оформить подписку с карты банка РФ
+            </button>
+        </p>
+    </div>
+</div>

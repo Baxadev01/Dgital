@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% load bootstrap %}
+{% load static %}
+
+{% block title %}Аккаунт неактивен{% endblock %}
+
+
+{% block css_block %}
+    <link rel="stylesheet" href="{% static 'css/subscription.css' %}">
+{% endblock %}
+
+{% block js_block %}
+    <script>
+        window.STRIPE_PK = "{{stripe_pk}}"
+        window.CSRF_TOKEN = "{{ csrf_token }}";
+    </script>    
+    <script src="{% static 'js/stripe.js' %}"></script>
+    <script src="{% static 'js/yandexkassa.js' %}"></script>
+
+    {{ subscription_tariffs|json_script:"data-subscription_tariffs" }}
+    <script>
+        var SUBSCRIPTION_TARIFFS = JSON.parse(document.getElementById('data-subscription_tariffs').textContent);
+
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        })
+        
+        function show_message(data) {
+            if (data.error) {
+                alert(data.error);
+            } else if (data.message) {
+                alert(data.message);
+            } else {
+                alert(data)
+            }
+        }
+
+        function subscription_save(action, tariff_slug) {
+            //запускаем лоадер на время выполнения
+            $("#stripe_is_loading").show();
+
+            action(tariff_slug).then( (data) => {
+                $("#stripe_is_loading").hide();
+                $('#subscriptionModal').modal('hide');
+
+                show_message(data)
+            })
+        }
+
+        function change_price(tariffs_info) {
+            var subscription_tariff = null;
+            var meeting_checked = document.getElementById('meeting_access').checked;
+            var diary_checked = document.getElementById('diary_access').checked;
+            var diary_access = document.querySelector('input[name="diary_access_mode"]:checked').value
+
+            if(diary_checked) {
+                document.getElementById('diary_access_choise').style.display = "block"
+            } else {
+                document.getElementById('diary_access_choise').style.display = "none"
+            }
+
+            if(!diary_checked && !meeting_checked) {
+                document.getElementById('subscription_price').style.display = "none"
+                document.getElementById('subscription_pay').style.display = "none"
+                document.getElementById('nds').style.display = "none"
+                return
+            }
+            
+
+            for(sc=0,x=SUBSCRIPTION_TARIFFS.length;sc<x;sc++) {
+                var tariff = SUBSCRIPTION_TARIFFS[sc]
+
+                if(meeting_checked) {
+                    if (tariff.meeting_access === "NONE") {
+                        continue;
+                    }
+                } else {
+                    if (tariff.meeting_access !== "NONE") {
+                        continue;
+                    }
+                }
+
+                if(diary_checked) {
+                    if(diary_access !== tariff.diary_access) {
+                        continue
+                    }
+                }
+                else {
+                    if(tariff.diary_access !== "READ") {
+                        continue
+                    }
+                }
+
+                subscription_tariff = tariff
+                break;
+            }
+
+            document.getElementById('subscription_price').style.display = "block"
+
+            if(subscription_tariff) {
+                var text = "Цена: " +  subscription_tariff.price_eur + " EUR / " + subscription_tariff.price_rub + " RUB за ";
+                text = text + subscription_tariff.duration + " " + subscription_tariff.duration_unit + "*";
+                document.getElementById('subscription_price').innerText = text
+                document.getElementById('nds').style.display = "block"
+                document.getElementById('subscription_pay').style.display = "block"
+
+                document.getElementById('stripe_subscription_save_button').onclick = function() { subscription_save(stripeCreateSubscription, subscription_tariff.slug) };
+                document.getElementById('yandex_subscription_save_button').onclick = function() { subscription_save(yandexCreateSubscription, subscription_tariff.slug) };
+
+            } else {
+                document.getElementById('subscription_price').innerText = "Для уточнения цены обратитесь в службу поддержки"
+                document.getElementById('nds').style.display = "none"
+                document.getElementById('subscription_pay').style.display = "none"
+            }
+        }
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        {% if not user.profile.wave %}
+            {% include "blocks/progress_bar.html" %}
+        {% endif %}
+        <div class="login-box">
+            <h2 class="login-logo">
+                #SelfRebootCamp - активация аккаунта
+            </h2>
+            {% if user.profile.is_blocked %}
+                <h4>
+                    Доступ к Вашей учетной запии ограничен согласно п. 3.5
+                    <a target="_blank" href="/tos-ru/">
+                        Договора об участии
+                    </a>.
+                </h4>
+                <div class="col-xs-12">
+                    <h6>
+                        Возможно, произошла какая-нибудь ошибка. В любом случае, пожалуйста, напишите нам в <a href="https://t.me/srbc_support_bot" target="_blank">техподдержку</a>,
+                        чтобы выяснить, как восстановить доступ.<br/>
+                        В сообщении обязательно укажите свой идентификатор участника проекта: <b>ID:{{ user.id }}</b>
+                    </h6>
+                </div>
+                {# тут можем оказаться только, если у нас нет активных/будущих записей в хистори (редирект на входе) #}    
+            {% else %}
+                {#  бывший участник #}     
+                <h4>
+                    Оплаченный Вами период пребывания в проекте подошел к концу.
+                    
+                    {% if user.profile.tariff_next %}
+                        <br>
+                        <br>
+                        Вам открыта оплата периода участия c {{ next_payment_from |date:"Y-m-d" }} по {{ next_payment_until |date:"Y-m-d" }}
+                        <p style="text-align: center; margin-top: 16px">
+                            <a class="btn btn-warning btn-lg" href="/payment/">
+                                <i class="glyphicons glyphicons-money"></i>
+                                Продлить участие
+                            </a>
+                        </p>
+                    {% else %}
+                        <br>
+                        <br>
+                        Чтобы вернуться в статусе активного участника, пожалуйста, напишите нам на support@selfreboot.camp
+                        <br>
+                        <br>
+                        Вы можете получить частичный доступ к личному кабинету и возможностями проекта в режиме подписки.
+                        <a href="https://selfreboot.camp/tariffs/#subscription" target="_blank">
+                            Подробнее о подписочных тарифах.
+                        </a>
+                        <p style="text-align: center; margin-top: 16px">
+                            <button type='button' class="btn btn-warning btn-lg" data-toggle="modal"
+                                data-target="#subscriptionModal">
+                                Конструктор опций
+                            </button>
+                        </p>
+
+                        <div class="modal fade" id="subscriptionModal" tabindex="-1" role="dialog" aria-labelledby="mealRulesLabel">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                                            <span aria-hidden="true">&times;</span></button>
+                                        <h4 class="modal-title" id="mealRulesLabel">Настройка подписки:</h4>
+                                    </div>
+                                    <div class="modal-body">
+                                        {% include "blocks/subscription_tariffs.html" %}
+                                        <div id="stripe_is_loading" class="my-5 py-5" style="display: none;">
+                                            <img src="{% static 'i/loading.gif' %}" class="center-block"/>
+                                        </div>                                   
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </h4>
+                <div class="col-xs-12">
+                    <h6>
+                        Если вы считатете, что произошла ошибка, пожалуйста, напишите нам в  <a href="https://t.me/srbc_support_bot" target="_blank">техподдержку</a>,
+                        чтобы выяснить, как восстановить доступ.<br/>
+                        В сообщении обязательно укажите свой идентификатор участника проекта: <b>ID:{{ user.id }}</b>
+                    </h6>
+                </div>
+                {% endif %}
+        </div>
+    </div>
+{% endblock %}

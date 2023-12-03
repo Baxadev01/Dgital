@@ -1,0 +1,1058 @@
+{% extends "srbc/base.html" %}
+{% load static bootstrap admin_tags %}
+{% block title %}
+    Редактор планового анализа
+{% endblock %}
+
+{% block css_block %}
+    <script type="text/javascript" src="{% static 'js/angular/angular.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-animate.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-sanitize.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-touch.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ui-bootstrap.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/showdown.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-markdown.min.js' %}"></script>
+
+    {#FIXME сделать min.js и прописать тут min#}
+    <script type="text/javascript"
+            src="{% static 'apps/admin_analysis/app.module.min.js' %}?v=2022011113">
+    </script>
+    <script src="{% static 'js/moment.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'apps/shared/stopclick/stopclickDirective.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ng-sticky.min.js' %}"></script>
+    <script src="{% static 'js/charts/highstock.js' %}?v=7.0.3"></script>
+    <script src="{% static 'js/charts/plugin.draggable-legend.js' %}"></script>
+    <style>
+        .div-with-border {
+            margin-bottom: 10px;
+            border-bottom: 2px groove #bce8f1;
+            border-width: 0.5px;
+        }
+
+        .text-label-primary {
+            color: #337ab7 !important;
+            border: 1px solid #337ab7;
+        }
+
+        .text-label-primary:hover {
+            color: #286090 !important;
+        }
+
+        .text-label-danger {
+            color: #d9534f !important;
+            border: 1px solid #d9534f;
+        }
+
+        .text-label-danger:hover {
+            color: #c9302c !important;
+        }
+
+        .text-label-black {
+            color: #000 !important;
+            border: 1px solid #000;
+        }
+
+        .text-label-black:hover {
+            color: #222 !important;
+        }
+
+        .text-label-warning {
+            color: #f0ad4e !important;
+            border: 1px solid #f0ad4e;
+        }
+
+        .text-label-warning:hover {
+            color: #ec971f !important;
+        }
+
+        .text-label-default {
+            color: #777 !important;
+            border: 1px solid #777;
+        }
+
+        .text-label-default:hover {
+            color: #5e5e5e !important;
+        }
+
+        .text-label-info {
+            color: #5bc0de !important;
+            border: 1px solid #5bc0de;
+        }
+
+        .text-label-info:hover {
+            color: #31b0d5 !important;
+        }
+
+        .label-black {
+            background-color: #000;
+        }
+
+        .label-black:hover {
+            background-color: #222;
+        }
+
+        .stat-bricks-container {
+            width: 100%
+        }
+
+        .stat-bricks-title {
+            width: 100%
+        }
+
+        .label-meal-not_ready {
+            border: 1px solid #777;
+            color: #FFF !important;
+            background-color: #FFF;
+        }
+
+        .label-meal-miss {
+            border: 1px solid #777;
+            color: #FFF !important;
+            background-color: #FFF;
+        }
+
+        .label-meal-fake {
+            border: 1px solid red;
+            color: black !important;
+            background-color: black;
+        }
+
+    </style>
+{% endblock %}
+
+{% block js_block %}
+
+    {{ profile_serialized|json_script:"data-profile-serialized" }}
+    <script>
+        var SRBC_USER = JSON.parse(document.getElementById('data-profile-serialized').textContent);
+    </script>
+
+    {#    <script>#}
+    {#        function addTemplate(tid) {#}
+    {#            var text_to_add = document.getElementById('template_' + tid).innerText;#}
+    {#            document.getElementById('id_content').value = document.getElementById('id_content').value + text_to_add + "\n";#}
+    {#            return false;#}
+    {#        }#}
+    {#    </script>#}
+{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid app-container ng-cloak" ng-app="srbcApp" ng-controller="RootCtrl">
+
+        <div ng-include="'{% static 'apps/shared/topmenu/alerts.html' %}'"></div>
+
+        <div class="row">
+            <div id="srbc_user_data" class="col-xs-12">
+                <div class="text-center {{ ruser.profile.header_class }}">
+                    <!-- @formatter:off -->
+                    <h3>{% if ruser.profile.is_perfect_weight %}<i
+                            class="glyphicons glyphicons-certificate" title="Идеальный вес"
+                    ></i>&nbsp;{% endif %}{% if ruser.profile.baby_case == 'FEEDING' %}<i
+                            class="glyphicons glyphicons-stroller"
+                            title="Особый случай - кормящая с {{ ruser.profile.baby_birthdate }}"
+                    ></i>&nbsp;{% endif %}{% if ruser.profile.baby_case == 'PREGNANT' %}<i
+                            class="glyphicons glyphicons-heartbeat"
+                            title="Особый случай - беременная. ПДР – {{ ruser.profile.baby_birthdate }}"
+                    ></i>&nbsp;{% endif %}@{{ ruser.username }}<span
+                            class="small">({{ ruser.profile.wave.title }}) #{{ ruser.pk }}</span>
+
+                            <span class="pull-right" style="font-size:16px;" ng-show="dashboard_visible">  
+                                <a class="btn btn-sm btn-primary" ng-click="prevInterval();" stop-click>
+                                    <i class="glyphicons glyphicons-chevron-left"></i>
+                                </a>
+                                <span>
+                                    {$ start_interval.format('DD.MM.YYYY') $}  -  {$ end_interval.format('DD.MM.YYYY') $}
+                                </span>
+                                <a class="btn btn-sm btn-primary" ng-click="nextInterval();" stop-click>
+                                    <i class="glyphicons glyphicons-chevron-right"></i>
+                                </a>
+                            </span>
+                    </h3>
+                    <!-- @formatter:on -->
+                    
+                        
+                    </spa>
+                </div>
+
+            </div>
+        
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading" ng-click="loadStatistics(); dashboard_visible = !dashboard_visible">
+                        <div class="panel-title">
+                            Статистика<span ng-hide="dashboard_visible"> &gt;&gt;&gt;</span>
+                            <a class="btn btn-default pull-right"
+                               style="margin-top: -6px;"
+                               ng-show="dashboard_visible"
+                               ng-click="dashboard_details_visible = !dashboard_details_visible"
+                               stop-click
+                            >
+                                <i class="glyphicons"
+                                   ng-class="{'glyphicons-eye-close': !dashboard_details_visible, 'glyphicons-eye-open': dashboard_details_visible}"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="panel-body" ng-show="dashboard_visible">
+                        <div class="row">
+                            <div class="col-md-12 col-lg-4">
+                                <div class="row">
+                                    <div class="col-md-6 col-lg-12">
+                                        <div class="panel panel-info">
+                                            <div class="panel-heading">
+                                                <div class="panel-title">
+                                                    График веса
+                                                    <a class="btn pull-right"
+                                                        style="margin-top: -6px;"
+                                                        ng-click="weight_chart_visible = !weight_chart_visible"
+                                                        stop-click
+                                                        >
+                                                            <i class="glyphicons"
+                                                            ng-class="{'glyphicons-chevron-right': !weight_chart_visible, 'glyphicons-chevron-down': weight_chart_visible}"></i>
+                                                    </a> 
+                                                </div>
+                                            </div>
+                                            <div class="panel-body" ng-show="weight_chart_visible">
+                                                <div id="srbc_user_chart_ratio" ></div>
+                                                <div class="row">
+                                                    <div class="col-sm-6 col-md-4">
+                                                        <div class="h5">За 2 недели:</div>
+                                                    </div>
+                                                    <div class="col-sm-6 col-md-8">
+                                                        <div class="h5" ng-if="weight_stat.trueweight_delta_weekly">
+                                                            {$ weight_stat.trueweight_delta_interval $} кг  ({$ weight_stat.trueweight_delta_weekly $} кг/нед)
+                                                        </div>
+                                                        <div class="h5" ng-if="!weight_stat.trueweight_delta_weekly">
+                                                            нет данных
+                                                        </div>
+                                                    </div>
+                                                </div>   
+                                                <div class="row">
+                                                    <div class="col-sm-6 col-md-4">
+                                                        <div class="h5">До этого:</div>
+                                                    </div>
+                                                    <div class="col-sm-6 col-md-8">
+                                                        <div class="h5" ng-if="weight_stat.prev_trueweight_delta_weekly">
+                                                            {$ weight_stat.prev_trueweight_delta_interval $} кг  ({$ weight_stat.prev_trueweight_delta_weekly $} кг/нед)
+                                                        </div>
+                                                        <div class="h5" ng-if="!weight_stat.prev_trueweight_delta_weekly">
+                                                            нет данных
+                                                        </div>
+                                                    </div>
+                                                </div> 
+                                            </div>        
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-lg-12">
+                                        <div class="panel panel-info">
+                                            <div class="panel-heading">
+                                                <div class="panel-title">
+                                                    Текущие рекомендации
+                                                    <a class="btn pull-right"
+                                                        style="margin-top: -6px;"
+                                                        ng-click="last_note_visible = !last_note_visible"
+                                                        stop-click
+                                                        >
+                                                            <i class="glyphicons"
+                                                            ng-class="{'glyphicons-chevron-right': !last_note_visible, 'glyphicons-chevron-down': last_note_visible}"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="panel-body" ng-show="last_note_visible">
+                                                <ul ng-if="last_note.has_meal_adjustments" >
+                                                    {#FIXME не много однотипных проверок на adjust_calories ?#}
+                                                    <li ng-if="last_note.adjust_calories">
+                                                        Корректировка калорийности рациона:
+                                                        {$ last_note.adjust_calories ? "+" : "" $} {$ last_note.adjust_calories | number : 0 $}%
+                                                    </li>
+                                                    <li ng-if="last_note.adjust_protein">
+                                                        {#FIXME не много однотипных проверок на adjust_protein ?#}
+                                                        Корректировка белка в рационе:
+                                                        {$ last_note.adjust_protein ? "+" : "" $} {$ last_note.adjust_protein | number : 0 $}%   
+                                                    </li>
+                                                    <li ng-if="last_note.add_fat">
+                                                        Добавить жиров: Да
+                                                    </li>                                                                                                             
+                                                    <li ng-if="last_note.adjust_fruits != 'NO'">
+                                                        Простые сахара:
+                                                        {$ last_note.get_adjust_fruits_display $}
+                                                    </li>
+                                                    <li ng-if="last_note.adjust_carb_mix_vegs">
+                                                        Смешивать овощи: Да
+                                                    </li>                                     
+                                                    <li ng-if="last_note.adjust_carb_bread_min">
+                                                        Уменьшение полисахаридов: Да
+                                                    </li>                                                       
+                                                    <li ng-if="last_note.adjust_carb_bread_late">
+                                                        Убрать полисахариды из ужина: Да
+                                                    </li>
+                                                    <li ng-if="last_note.adjust_carb_carb_vegs">
+                                                        Исключить запасающие овощи после обеда: Да
+                                                    </li>
+                                                    <li ng-if="last_note.adjust_carb_sub_breakfast">
+                                                        Замена длинных углеводов на овощи
+                                                        (завтрак по схеме обеда): Да
+                                                    </li>
+                                                    <li ng-if="last_note.exclude_lactose">
+                                                        Исключить молочные сахара: Да
+                                                    </li>
+                                                    <li ng-if="last_note.restrict_lactose_casein">
+                                                        Ограничить молочные сахара и казеин вторым завтраком: Да
+                                                    </li>                                                       
+                                                </ul>
+                                                <h5 ng-if="!last_note.has_meal_adjustments">отсутствуют</h5>                                               
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                   
+
+                                    <div class="col-md-6 col-lg-12" ng-if="doc_notes.length > 0">
+                                        <div class="panel panel-info">
+                                            <div class="panel-heading">
+                                                <div class="panel-title">
+                                                    Медицинские заметки
+                                                    <a class="btn pull-right"
+                                                        style="margin-top: -6px;"
+                                                        ng-click="doc_notes_visible = !doc_notes_visible"
+                                                        stop-click
+                                                        >
+                                                            <i class="glyphicons"
+                                                            ng-class="{'glyphicons-chevron-right': !doc_notes_visible, 'glyphicons-chevron-down': doc_notes_visible}"></i>
+                                                    </a> 
+                                                </div>
+                                            </div>
+                                            <ul class="panel-body list-group" ng-show="doc_notes_visible">
+                                                <li class="list-group-item " ng-repeat="note in doc_notes track by $index" ng-show="$index==0 || doc_notes_full_list">
+                                                    <i class="glyphicons glyphicons-doctor"></i>
+                                                    <b>{$ note.date_added | date:'yyyy-MM-dd' $}</b> by
+                                                    <b>{$ note.author $}</b>
+                                                    
+                                                    <span class="label label-success" ng-show="note.is_published">
+                                                        <span class="glyphicons glyphicons-eye-open"></span> 
+                                                        Участнику
+                                                    </span>
+                                                    <span class="label label-danger" ng-show="!note.is_published">
+                                                        <span class="glyphicons glyphicons-eye-close"></span> 
+                                                        Комсоставу
+                                                    </span>  
+                                                    <div btf-markdown="note.content"></div>
+                                                </li>
+                                                <a class="btn pull-right"
+                                                    style="margin-top: -6px;"
+                                                    ng-click="doc_notes_full_list = !doc_notes_full_list"
+                                                    stop-click
+                                                    >
+                                                        {$ doc_notes_full_list ? "Свернуть" : "Полный список(" + doc_notes.length +")" $} 
+                                                        {# <i class="glyphicons" ng-class="{'glyphicons-chevron-right': !doc_notes_full_list, 'glyphicons-chevron-double-down': doc_notes_full_list}"></i> #}
+                                                </a>
+                                                                                    
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    {% if ruser.goals.all|length %}
+                                        <div class="col-md-6 col-lg-12">
+                                            <div class="panel panel-info">
+                                                <div class="panel-heading">
+                                                    <div class="panel-title">
+                                                        Цели участия
+                                                        <a class="btn pull-right"
+                                                            style="margin-top: -6px;"
+                                                            ng-click="goals_visible = !goals_visible"
+                                                            stop-click
+                                                            >
+                                                                <i class="glyphicons"
+                                                                ng-class="{'glyphicons-chevron-right': !goals_visible, 'glyphicons-chevron-down': goals_visible}"></i>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                                <div class="panel-body" ng-show="goals_visible">
+                                                    <ul>
+                                                        {% for goal in ruser.goals.all %}
+                                                            <li>
+                                                                <div>
+                                                                    <strong>{{ goal.title }} ({{ goal.get_status_display }})</strong>
+                                                                </div>
+                                                                <div class="small"><i>{{ goal.created_at|date:"Y-m-d" }}</i></div>
+                                                                <p class="small">{{ goal.text }}</p>
+                                                            </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-lg-4">
+                                <div class="panel panel-info" ng-if="product_tags_stat.length > 0">
+                                    <div class="panel-heading">
+                                        <div class="panel-title">
+                                            По продуктам питания:
+                                        </div>
+                                    </div>
+                                    <div class="panel-body">                                           
+                                        <div class="row" ng-repeat="row in product_tags_stat">
+                                            <div class="col-sm-6 col-md-4 stat-bricks-title">
+                                                <div class="h5"> 
+                                                    {$ row.title $}&nbsp;({$ row.count $} / {$ row.days $})
+                                                    <span ng-if="row.weight">
+                                                        &ndash; {$ row.weight | number : 0 $} г
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 col-md-8 stat-bricks-container"
+                                                    ng-show="dashboard_details_visible">
+                                                <span ng-repeat="s in row.stat track by $index">
+                                                    <a class="label label-default text-label-default label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s==0"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}"   
+                                                        href="{$ getMealLink(dates[$index]); $}"
+                                                     >0</a>
+                                                    <a class="label label-info text-label-info label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s==1"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}"
+                                                        href="{$ getMealLink(dates[$index]); $}"  
+                                                    >{$ s $}</a>
+                                                    <a class="label label-info label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s>1"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}" 
+                                                        href="{$ getMealLink(dates[$index]); $}"
+                                                    >{$ s $}</a>
+                                                </span>
+                                            </div>
+                                        </div>  
+                                    </div>
+                                </div>
+                                <div class="panel panel-info" ng-if="comp_stat.length > 0">
+                                    <div class="panel-heading">
+                                        <div class="panel-title">
+                                            По типу продуктов:
+                                        </div>
+                                    </div>
+                                    <div class="panel-body">                                           
+                                        <div class="row" ng-repeat="row in comp_stat">
+                                            <div class="col-sm-6 col-md-4 stat-bricks-title">
+                                                <div class="h5">
+                                                    {$ row.title $}&nbsp;({$ row.count $} / {$ row.days $})
+                                                    <span ng-if="row.weight">
+                                                        &ndash; {$ row.weight | number : 0 $} г
+                                                    </span>          
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 col-md-8 stat-bricks-container"
+                                                    ng-show="dashboard_details_visible">
+                                                <span ng-repeat="s in row.stat track by $index">  
+                                                    <a class="label label-default text-label-default label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s==0"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}"
+                                                        href="{$ getMealLink(dates[$index]); $}"   
+                                                    >0</a>
+                                                    <a class="label label-info text-label-info label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s==1"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}"  
+                                                        href="{$ getMealLink(dates[$index]); $}"
+                                                    >{$ s $}</a>                                                            
+                                                    <a class="label label-info label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s>1"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}" 
+                                                        href="{$ getMealLink(dates[$index]); $}"
+                                                    >{$ s $}</a>                                                 
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="panel panel-info">
+                                    <div class="panel-heading">
+                                        <div class="panel-title">
+                                            Активность и вода:
+                                        </div>
+                                    </div>                                   
+                                    <div class="panel-body">
+                                        <div class="div-with-border" style="margin-bottom: 10px;">
+                                            <div class="row">
+                                                <div class="col-sm-6 col-md-4">
+                                                    <div class="h5">Дней со 100% активности:</div>
+                                                </div>
+                                                <div class="col-sm-6 col-md-8">
+                                                    <div class="h5">
+                                                        {$ steps_stat.filled_days > 0 ? steps_stat.active_days + " д / " + steps_stat.filled_days + " д" : "нет данных "$}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-6 col-md-4">
+                                                    <div class="h5">В остальные дни:</div>
+                                                </div>
+                                                <div class="col-sm-6 col-md-8">                                              
+                                                    <div class="h5" ng-if="steps_stat.lazy_days > 0">
+                                                        {$ steps_stat.lazy_days_avg_percent | number : 0 $} %
+                                                    </div>
+                                                    <div class="h5" ng-if="steps_stat.lazy_days == 0">
+                                                        нет данных
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="row">
+                                                <div class="col-sm-6 col-md-4">
+                                                    <div class="h5">Выпита норма воды:</div>
+                                                </div>
+                                                <div class="col-sm-6 col-md-8">
+                                                    <div class="h5">
+                                                        {$ water_stat_summary.filled_days > 0 ? water_stat_summary.norm_days + " д / " + water_stat_summary.filled_days + " д" : "нет данных "$}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-6 col-md-4">
+                                                    <div class="h5">В остальные дни:</div>
+                                                </div>
+                                                <div class="col-sm-6 col-md-8">
+                                                    <div class="h5" ng-if="water_stat_summary.dry_days_count > 0">
+                                                        {$ water_stat_summary.dry_days_avg | number : 1 $} мл/кг 
+                                                    </div>
+                                                    <div class="h5" ng-if="water_stat_summary.dry_days_count == 0">
+                                                        нет данных
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-6 col-md-4" >
+                                                    <div class="h5">Среднее за период</div>
+                                                </div>
+                                                <div class="col-sm-6 col-md-8">
+                                                    <div class="h5" ng-if="water_stat_summary.filled_days > 0">
+                                                        {$ water_stat_summary.avg | number : 1 $} мл/кг 
+                                                    </div>
+                                                    <div class="h5" ng-if="water_stat_summary.filled_days == 0">
+                                                        нет данных
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row" ng-show="dashboard_details_visible">
+                                                <div class="col-sm-6 col-md-4 stat-bricks-title">
+                                                    <div class="h5">По дням</div>
+                                                </div>
+                                                <div class="col-sm-6 col-md-8 stat-bricks-container">
+                                                    <span ng-repeat="d in water_stat track by $index">                                                  
+                                                        <a class="label label-black text-label-black label-meal-{$meal_class_days[$index]$}"
+                                                            ng-if="d.water_flag == 'NO'"
+                                                            target="_blank"
+                                                            uib-tooltip="{$ meal_dates[$index] $}"
+                                                            href="{$ getMealLink(dates[$index]); $}"    
+                                                        >0</a>
+                                                        <a class="label label-info text-label-info label-meal-{$meal_class_days[$index]$}"
+                                                            ng-if="d.water_flag == 'OK'"
+                                                            target="_blank"
+                                                            uib-tooltip="{$ meal_dates[$index]$}: {$d.water_per_kilo | number : 1 $} мл/кг" 
+                                                            href="{$ getMealLink(dates[$index]); $}"
+                                                        >1</a>                                                   
+                                                        <a class="label label-warning text-label-warning label-meal-{$meal_class_days[$index]$}"
+                                                            ng-if="d.water_flag == 'DRY'"
+                                                            target="_blank"
+                                                            uib-tooltip="{$ meal_dates[$index]$}: {$d.water_per_kilo | number : 1 $} мл/кг"
+                                                            href="{$ getMealLink(dates[$index]); $}"
+                                                        >0</a>                                              
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-lg-4">
+                                <div class="panel panel-info" ng-if="$root.faults_stat.length > 0">
+                                    <div class="panel-heading">
+                                        <div class="panel-title">
+                                            Жиронакопительные действия:
+                                        </div>
+                                    </div>
+                                    <div class="panel-body" >
+                                        <div class="row" ng-repeat="row in faults_stat">
+                                            <div class="col-sm-6 col-md-4 stat-bricks-title">
+                                                <div class="h5" ng-if="row.fault.short_title">
+                                                    {$ row.fault.short_title $}&nbsp;({$ row.count $}
+                                                    / {$ row.days $})
+                                                </div> 
+                                                <div class="h5" ng-else>{$ row.fault.title $}&nbsp;({$ row.count $}
+                                                    / {$ row.days $})
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 col-md-8 stat-bricks-container"
+                                                    ng-show="dashboard_details_visible">
+                                                <span ng-repeat="s in row.stat track by $index">                                   
+                                                    <a class="label label-default text-label-default label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s==0"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}"   
+                                                        href="{$ getMealLink(dates[$index]); $}"  
+                                                    >0</a>
+                                                    <a class="label label-danger text-label-danger label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s==1"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}"  
+                                                        href="{$ getMealLink(dates[$index]); $}"
+                                                    >{$ s $}</a>
+                                                    <a class="label label-danger label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s>1"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}" 
+                                                        href="{$ getMealLink(dates[$index]); $}"
+                                                    >{$ s $}</a>
+                                                </span>
+                                            </div>
+                                        </div>                                           
+                                    </div>
+                                </div>
+                                <div class="panel panel-info" ng-if="$root.balance_stat.length > 0">
+                                    <div class="panel-heading">
+                                        <div class="panel-title">
+                                            Особенности пищевого поведения (полноценность):
+                                        </div>
+                                    </div>
+                                    <div class="panel-body">
+                                        <div class="row" ng-repeat="row in balance_stat">
+                                            <div class="col-sm-6 col-md-4 stat-bricks-title">
+                                                <div class="h5" ng-if="row.fault.short_title">
+                                                    {$ row.fault.short_title $}&nbsp;({$ row.count $}
+                                                    / {$ row.days $})
+                                                </div>                      
+                                                <div class="h5" ng-else>
+                                                    {$ row.fault.title $}&nbsp;({$ row.count $}
+                                                    / {$ row.days $})
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 col-md-8 stat-bricks-container"
+                                                ng-show="dashboard_details_visible">
+                                                <span ng-repeat="s in row.stat track by $index">                                   
+                                                    <a class="label label-default text-label-default label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s==0"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}"   
+                                                        href="{$ getMealLink(dates[$index]); $}"
+                                                    >0</a>
+                                                    <a class="label label-primary text-label-primary label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s==1"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}"  
+                                                        href="{$ getMealLink(dates[$index]); $}"
+                                                    >{$ s $}</a>
+                                                    <a class="label label-primary label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s>1"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}" 
+                                                        href="{$ getMealLink(dates[$index]); $}"
+                                                    >{$ s $}</a>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="panel panel-info" ng-if="$root.opp_stat.length > 0 || $root.hunger_stat.length > 0">
+                                    <div class="panel-heading">
+                                        <div class="panel-title">
+                                            Особенности пищевого поведения (остальное):
+                                        </div>
+                                    </div>
+                                    <div class="panel-body">
+                                        <div class="row" ng-repeat="row in opp_stat">
+                                            <div class="col-sm-6 col-md-4 stat-bricks-title">
+                                                <div class="h5" ng-if="row.fault.short_title">
+                                                    {$ row.fault.short_title $}&nbsp;({$ row.count $}
+                                                    / {$ row.days $})
+                                                </div>                      
+                                                <div class="h5" ng-else>
+                                                    {$ row.fault.title $}&nbsp;({$ row.count $}
+                                                    / {$ row.days $})
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 col-md-8 stat-bricks-container"
+                                                ng-show="dashboard_details_visible">
+                                                <span ng-repeat="s in row.stat track by $index">                                   
+                                                    <a class="label label-default text-label-default label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s==0"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}" 
+                                                        href="{$ getMealLink(dates[$index]); $}"   
+                                                    >0</a>
+                                                    <a class="label label-primary text-label-primary label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s==1"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}" 
+                                                        href="{$ getMealLink(dates[$index]); $}" 
+                                                    >{$ s $}</a>
+                                                    <a class="label label-primary label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s>1"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}" 
+                                                        href="{$ getMealLink(dates[$index]); $}"
+                                                    >{$ s $}</a>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm-6 col-md-4 stat-bricks-title">                   
+                                                <div class="h5" ng-else>
+                                                    Чувство голода &nbsp;({$ $root.hunger_stat.hunger_total $}
+                                                    / {$ $root.hunger_stat.days $})
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 col-md-8 stat-bricks-container"
+                                                ng-show="dashboard_details_visible">
+                                                <span ng-repeat="s in $root.hunger_stat.stat track by $index">                                   
+                                                    <a class="label label-default text-label-default label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s == 'NA'"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}" 
+                                                        href="{$ getMealLink(dates[$index]); $}"   
+                                                    >0</a>
+                                                    <a class="label label-primary label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="s != 'NA'"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}" 
+                                                        href="{$ getMealLink(dates[$index]); $}"
+                                                    >{$ s $}</a>
+                                                </span>
+                                            </div>
+                                        </div>   
+                                    </div>
+                                </div>                              
+                                <div class="panel panel-info" ng-if="fatcarb_list.length > 0">
+                                    <div class="panel-heading">
+                                        <div class="panel-title">
+                                            Употребление жирных углеводов:
+                                        </div>
+                                    </div>
+                                    <div class="panel-body">
+                                        <ul>                                                
+                                            <li ng-repeat="row in fatcarb_list track by $index">
+                                                <strong>{$ row.product_title $}</strong> &mdash; {$ row.total $}
+                                            </li>                                               
+                                        </ul>
+                                    </div>
+                                </div> 
+                                <div class="panel panel-info" ng-if="comp_stat.length > 0">
+                                    <div class="panel-heading">
+                                        <div class="panel-title">
+                                            Следование концепции:
+                                        </div>
+                                    </div>
+                                    <div class="panel-body">                                                                               
+                                        <div class="row">
+                                            <div class="col-sm-6 col-md-4">
+                                                <div class="h5" ng-if="meal_stat.filled_days > 0">
+                                                    Дней с полноценным питанием ({$ meal_stat.ok_days_percent | number : 0 $}%):
+                                                </div>
+                                                <div class="h5" ng-if="meal_stat.filled_days == 0">
+                                                    Дней с полноценным питанием:
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 col-md-8">
+                                                <div class="h5" ng-if="meal_stat.filled_days > 0">
+                                                    {$ meal_stat.ok_days $} д / {$ meal_stat.filled_days $} д
+                                                </div>
+                                                <div class="h5" ng-if="meal_stat.filled_days == 0">
+                                                    нет данных
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm-6 col-md-4">
+                                                <div class="h5">
+                                                    В остальные дни:
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 col-md-8">
+                                                <div class="h5" ng-if="meal_stat.fault_days > 0">
+                                                    {$ meal_stat.fault_days_meals_avg $}%
+                                                </div>
+                                                <div class="h5" ng-if="meal_stat.fault_days == 0">
+                                                    нет данных
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-sm-6 col-md-4">
+                                                <div class="h5">Накопление жира:</div>
+                                            </div>
+                                            <div class="col-sm-6 col-md-8">
+                                                <div class="h5">
+                                                    {$ meal_stat.faults_sum $} жнд / {$ meal_stat.faulty_days_count $} д
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row" ng-show="!dashboard_details_visible">
+                                            <div class="col-sm-6 col-md-4">
+                                                <div class="h5">Следование персональным рекомендациям:</div>
+                                            </div>
+                                            <div class="col-sm-6 col-md-8">
+                                                <div class="h5" ng-if="pers_req_stat.general.days > 0">
+                                                    {$ pers_req_stat.general.success_days $} д / {$ pers_req_stat.general.days $} д
+                                                </div>
+                                                <div class="h5" ng-if="pers_req_stat.general.days == 0">
+                                                    нет данных
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row" ng-show="dashboard_details_visible">
+                                            <div class="col-sm-6 col-md-4 stat-bricks-title">
+                                                <div class="h5">Следование персональным рекомендациям (в целом)</div>
+                                            </div>
+                                            <div class="col-sm-6 col-md-8 stat-bricks-container">
+                                                <span ng-repeat="p in pers_req track by $index">                                                  
+                                                    <a class="label label-default text-label-default label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="p == 'NULL' || p == 'NA'"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}"
+                                                        href="{$ getMealLink(dates[$index]); $}"    
+                                                    >0</a>
+                                                    <a class="label label-info text-label-info label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="p == 'OK'"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}" 
+                                                        href="{$ getMealLink(dates[$index]); $}"
+                                                    >0</a>                                                                                     
+                                                    <a class="label label-danger text-label-danger label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="p == 'F'"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}"
+                                                        href="{$ getMealLink(dates[$index]); $}"
+                                                    >0</a>                                                 
+                                                </span>
+                                            </div>
+                                        </div>
+                            
+                                        <div class="row" ng-repeat="row in pers_req_stat.recommendations" ng-show="dashboard_details_visible">
+                                            <div class="col-sm-6 col-md-4 stat-bricks-title">
+                                                <div class="h5">
+                                                    {$ row.title $}
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 col-md-8 stat-bricks-container"
+                                                    ng-show="dashboard_details_visible">
+                                                <span ng-repeat="p in row.stat track by $index">  
+                                                    <a class="label label-default text-label-default label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="p == 'NULL' || p == 'NA'"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}"
+                                                        href="{$ getMealLink(dates[$index]); $}"    
+                                                    >0</a>
+                                                    <a class="label label-default text-label-default label-meal-miss"
+                                                        ng-if="p == 'miss'"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}"
+                                                        href="{$ getMealLink(dates[$index]); $}"    
+                                                    >0</a>
+                                                    <a class="label label-info text-label-info label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="p == 'OK'"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}" 
+                                                        href="{$ getMealLink(dates[$index]); $}"
+                                                    >0</a>                                                                                     
+                                                    <a class="label label-danger text-label-danger label-meal-{$meal_class_days[$index]$}"
+                                                        ng-if="p == 'F'"
+                                                        target="_blank"
+                                                        uib-tooltip="{$ meal_dates[$index] $}"
+                                                        href="{$ getMealLink(dates[$index]); $}"
+                                                    >0</a>                                                     
+                                                </span>
+                                            </div>
+                                        </div>                                      
+                                    </div>
+                                </div>                             
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12 col-sm-6">
+                <div class="panel panel-info">
+                    <div class="panel-heading" ng-click="templates_list_visible = !templates_list_visible">
+                        <div class="panel-title">
+                            Шаблоны<span ng-hide="templates_list_visible"> &gt;&gt;&gt;</span>
+                        </div>
+                    </div>
+                    <div class="panel-body" ng-show="templates_list_visible">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="input-group">
+                                    <input type="text" ng-model="template_filter" class="form-control input-lg">
+                                    <div class="input-group-addon">
+                                        <button class="btn btn-sm btn-primary" ng-click="template_filter = ''">
+                                            <i class="glyphicons glyphicons-cleaning"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-body" ng-show="templates_list_visible">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="panel-group" id="accordion">
+                                    <analysis-template ng-repeat="template in templates | filter:template_filter"
+                                                       obj="template"></analysis-template>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-12 col-sm-6">
+                <div class="panel panel-default">
+
+                    <form class="panel-body" name="UserNoteForm">
+                        <div class="form-group">
+                            <label class="control-label" for="">Текст анализа</label>
+                            <textarea rows="10" class="form-control"
+                                      name="text"
+                                      ng-model="user_note.content"
+                                      required>
+                            </textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-inline">
+                                <div class="form-group">
+                                    <label for="" class="control-label">Калорийность</label>
+                                    <div class="input-group">
+                                        <input type="number" ng-model="user_note.adjust_calories" min="-100"
+                                               max="200" step="5" class="form-control" ng-required="true">
+                                        <div class="input-group-addon">
+                                            %
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="" class="control-label">Белковость</label>
+                                    <div class="input-group">
+                                        <input type="number" ng-model="user_note.adjust_protein" min="-100" max="200"
+                                               step="5" class="form-control" ng-required="true">
+                                        <div class="input-group-addon">
+                                            %
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="add_fat">Добавить жиры</label>
+                                    <input type="checkbox" ng-model="user_note.add_fat" id="add_fat">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="control-label" for="">Простые сахара</label>
+                            <select class="select form-control"
+                                    ng-required="true"
+                                    ng-model="user_note.adjust_fruits">
+
+                                <option value="NO">без дополнительных ограничений</option>
+                                <option value="RESTRICT">Минимизация моно- и дисахаридов</option>
+                                <option value="EXCLUDE">Замена моно- и дисахаридов</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="control-label">Полисахариды</label>
+                            <div>
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" ng-model="user_note.adjust_carb_bread_min">
+                                    Уменьшение полисахаридов
+                                </label>
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" ng-model="user_note.adjust_carb_bread_late">
+                                    Убрать полисахариды из ужина
+                                </label>
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" ng-model="user_note.adjust_carb_carb_vegs">
+                                    Исключить запасающие овощи после обеда
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-inline">
+                                <input type="checkbox" ng-model="user_note.adjust_carb_sub_breakfast">
+                                Замена длинных углеводов на овощи (завтрак по схеме обеда)
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-inline">
+                                <input type="checkbox" ng-model="user_note.exclude_lactose">
+                                Исключить молочные сахара
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-inline">
+                                <input type="checkbox" ng-model="user_note.adjust_carb_mix_vegs">
+                                Смешивать овощи
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-inline">
+                                <input type="checkbox" ng-model="user_note.restrict_lactose_casein">
+                                Ограничить молочные сахара и казеин вторым завтраком
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="control-label">Алярма</label>
+                            <select class="select form-control"
+                                    ng-required="true"
+                                    ng-model="user_note.alarm">
+                                <option value="OK">Всё ок</option>
+                                <option value="TEST" class="bg-warning">Необходимо специализированное обследование
+                                </option>
+                                <option value="OBSERVATION" class="bg-info">Имеются особенности обмена, требуется
+                                    наблюдение
+                                </option>
+                                <option value="TREATMENT" class="bg-success">Под наблюдением врачей</option>
+                                <option value="DANGER" class="bg-danger">Необходимо лечение, требуется посещение врача
+                                </option>
+                                <option value="PR" class="bg-purple text-light">Необходимо постоянное следование
+                                    персональным рекомендациям
+                                </option>
+                                <option value="OOC" class="bg-dark text-light">Питание не соответствует методичке и
+                                    общим
+                                    рекомендациям проекта
+                                </option>
+                            </select>
+                        </div>
+
+
+                        <div class="form-group">
+                            <button name="submit" type="submit" class="btn btn-warning"
+                                    ng-click="UserNoteForm.$valid && addUserNote()">
+                                <i class="glyphicons glyphicons-magic"></i>
+                                Вжух
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}

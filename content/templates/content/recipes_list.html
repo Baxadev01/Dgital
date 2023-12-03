@@ -1,0 +1,116 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+{% load bootstrap3 %}
+
+{% block title %}
+    #Рецепты – #SelfRebootCamp – онлайн программа похудения
+{% endblock %}
+
+
+{% block navbar_bottom %}{% endblock %}
+
+{% block content %}
+    <style>
+        .recipe {
+            position: relative;
+        }
+
+        .recipe .recipe_anchor {
+            top: -70px;
+            position: absolute;
+        }
+
+        .recipe_link {
+            display: inline-block;
+            width: 100%;
+        }
+    </style>
+    <!-- Page Content -->
+    <div class="container-fluid">
+        <a name="top"></a>
+        <h1>Рецепты</h1>
+        <div class="row" id="recipes_grid">
+            <div class="col-md-4 col-sm-6">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <label>Теги:</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12">
+                        <a href="./?tags={% if q %}&q={{ q|urlencode }}{% endif %}" class="label label-success">Все рецепты</a>
+                        {% for tag in tags %}
+                            <a href="./?tags={{ tag.strip }}" class="label label-primary">{{ tag.strip }}
+                                &nbsp;<a href="./?tags={% for tag2 in tags %}{% if tag2 != tag %}{{ tag2.strip }}{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}{% if q %}&q={{ q|urlencode }}{% endif %}">x</a>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-8 recipe pull-right">
+                {% bootstrap_pagination recipes extra=request.GET.urlencode %}
+            </div>
+        </div>
+        <div class="row" id="recipes_grid">
+            <div class="col-md-4 col-sm-6">
+                <div class="row" style="margin-bottom: 4px;">
+                    <div class="col-xs-12">
+                        <form method="get">
+                            <input type="hidden" name="tags" value="{% for tag in tags %}{{ tag.strip }}{% if not forloop.last %},{% endif %}{% endfor %}"/>
+                            <div class="input-group">
+                                <input type="text" name="q" value="{{ q }}" placeholder="Поиск" class="form-control"/>
+                                <span class="input-group-btn">
+                                    <button type="submit" class="btn btn-default btn-small btn-group-sm">
+                                        <i class="glyphicon glyphicon-search"></i>
+                                    </button>
+                                </span>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+
+                <div class="panel panel-primary">
+                    {% for recipe in recipes.object_list %}
+                        <a href="#recipe_{{ recipe.pk }}" class="recipe_link">{{ recipe.title }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% for recipe in recipes.object_list %}
+                <div class="col-sm-6 col-md-8 recipe pull-right">
+                    <a name="recipe_{{ recipe.pk }}" class="recipe_anchor"></a>
+                    <div class="panel panel-success">
+                        <div class="panel-heading">
+                            {{ recipe.title }}
+                            <a href="#top" class="pull-right"><i class="glyphicons glyphicons-circle-arrow-top"></i> К
+                                списку</a>
+                        </div>
+                        <div class="panel-body bg-warning">
+                            {{ recipe.comment|linebreaks }}
+                        </div>
+                        <div class="panel-body">
+                            {{ recipe.body|linebreaks }}
+                        </div>
+                        <div class="panel-footer">
+                            {% for tag in recipe.tags %}
+                                <a href="./?tags={{ tag.strip }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="label label-primary">
+                                    {{ tag.strip }}
+                                    &nbsp;
+                                    <a href="./?tags={{ tags|join:"," }}{% if tags %},{% endif %}{{ tag.strip }}{% if q %}&q={{ q|urlencode }}{% endif %}">+</a>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <!-- /.row -->
+        <div class="row">
+            <div class="col-sm-6 col-md-8 recipe pull-right">
+                {% bootstrap_pagination recipes extra=request.GET.urlencode %}
+            </div>
+
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}

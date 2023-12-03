@@ -1,0 +1,373 @@
+{% extends "srbc/base.html" %}
+
+{% block title %}
+#SelfRebootCamp – панель быстрокотика/сержанта
+{% endblock %}
+{% block navbar_bottom %}{% endblock %}
+{% block css_block %}
+<script type="text/javascript" src="/static/js/angular/angular.js"></script>
+<script type="text/javascript" src="/static/js/angular/angular-animate.js"></script>
+<script type="text/javascript" src="/static/js/angular/angular-sanitize.js"></script>
+<script type="text/javascript" src="/static/js/angular/angular-touch.js"></script>
+<script type="text/javascript" src="/static/js/angular/ui-bootstrap.js"></script>
+
+<script type="text/javascript" src="/static/apps/techcat_dashboard/app.module.js"></script>
+
+<script type="text/javascript" src="/static/apps/shared/stopclick/stopclickDirective.js"></script>
+{% endblock %}
+{% block content %}
+<!-- Page Content -->
+<div class="container-fluid">
+    <div class="panel panel-info" ng-controller="RootCtrl">
+        <div class="panel-heading">
+            <div class="form-horizontal row">
+                <div class="col-xs-6 col-sm-2 pull-right">
+                    <div class="btn-group pull-right">
+                        <button class="btn btn-sm btn-default"
+                                ng-click="tableSizeDown()"><i
+                                class="glyphicons glyphicons-text-smaller"></i></button>
+                        <button class="btn btn-sm btn-default"
+                                ng-click="tableSizeUp()"><i
+                                class="glyphicons glyphicons-text-bigger"></i></button>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-4">
+                    <select class="form-control"
+                            id="shift_selector">
+                        <option>2017-05-29 – 2017-06-04</option>
+                    </select>
+                </div>
+                <div class="col-xs-3 col-sm-2">
+                    <select class="form-control"
+                            id="wave_selector">
+                        <option>2.1</option>
+                    </select>
+                </div>
+                <div class="col-xs-9 col-sm-4">
+                    <select class="form-control"
+                            id="user_selector">
+                        <option>rumantick_reboot</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="panel-footer">
+            <div class="panel panel-success">
+                <div class="panel-heading text-center">
+                    Рацион марафонца <b><i class="social social-instagram"></i> rumantick_reboot</b>
+                </div>
+                <ul class="list-group">
+                    <div class="panel-body">
+                        <li class="row list-group-item">
+                            <div class="col-md-2">
+                                <div class="panel panel-primary">
+                                    <div class="panel-heading">
+                                        <b><i class="glyphicons glyphicons-calendar"></i> 2017-05-29</b>
+                                    </div>
+                                    <div class="panel-body">
+                                        <div class="col-xs-12">
+                                            <label class="radio">
+                                                <input type="radio" name="t"/>
+                                                Оцифровка
+                                            </label>
+                                            <label class="radio">
+                                                <input type="radio" name="t"/>
+                                                Нет данных
+                                            </label>
+
+                                            <label class="radio">
+                                                <input type="radio" name="t"/>
+                                                Вне концепции
+                                            </label>
+                                            <label class="radio">
+                                                <input type="radio" name="t"/>
+                                                Монотонный
+                                            </label>
+
+                                            <label class="radio">
+                                                <input type="radio" name="t"/>
+                                                Разгрузочный
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-10">
+                                <div class="form-horizontal">
+                                    <div class="col-md-4">
+                                        <div class="row">
+
+                                            <div class="col-md-12 col-xs-6">
+                                                <div class="form-group form-group--">
+                                                    <div class="input-group">
+                                                        <div class="input-group-addon"><i
+                                                                class="glyphicons glyphicons-dining-set"></i>
+                                                        </div>
+                                                        <input type="text"
+                                                               class="form-control"
+                                                               ng-model="currentDiaries[user.id][date].meals"
+                                                               ng-blur="saveTableData(user.id, date)"
+                                                               ng-disabled="currentDiaries[user.id][date].meal_flag || diariesDisabledFields[user.id][date]['meal_flags'] || diariesDisabledFields[user.id][date]['meals']"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12 col-xs-6">
+                                                <div class="form-group form-group--">
+                                                    <div class="input-group">
+                                                        <div class="input-group-addon"><i
+                                                                class="glyphicons glyphicons-warning-sign"></i>
+                                                        </div>
+                                                        <input type="text"
+                                                               class="form-control"/>
+                                                        <div class="input-group-addon">
+                                                            <label>
+                                                                <i class="glyphicons glyphicons-asterisk"></i>
+                                                                <input type="checkbox" title="Превышение калорийности"/>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12 col-xs-12">
+                                                <div class="form-group">
+                                                <textarea class="form-control" placeholder="Комментарий"
+                                                          rows="5"></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="panel panel-warning">
+                                            <div class="panel-heading">
+                                                Замечания по рациону
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Сон после еды
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Алкоголь с закуской
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Перерыв от подъёма до завтрака
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Перерыв между приемами пищи
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Сладкое натощак
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Два сладких приема пищи подряд
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Длинные углеводы после обеда
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Перекусы не по методичке
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Регулярное превышение калорийности
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Марафонец голодааааааааееееет!!!
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="row list-group-item">
+                            <div class="col-md-2">
+                                <div class="panel panel-primary">
+                                    <div class="panel-heading">
+                                        <b><i class="glyphicons glyphicons-calendar"></i> 2017-05-30</b>
+                                    </div>
+                                    <div class="panel-body">
+                                        <div class="col-xs-12">
+                                            <label class="radio">
+                                                <input type="radio" name="t"/>
+                                                Оцифровка
+                                            </label>
+                                            <label class="radio">
+                                                <input type="radio" name="t"/>
+                                                Нет данных
+                                            </label>
+
+                                            <label class="radio">
+                                                <input type="radio" name="t"/>
+                                                Вне концепции
+                                            </label>
+                                            <label class="radio">
+                                                <input type="radio" name="t"/>
+                                                Монотонный
+                                            </label>
+
+                                            <label class="radio">
+                                                <input type="radio" name="t"/>
+                                                Разгрузочный
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-10">
+                                <div class="form-horizontal">
+                                    <div class="col-md-4">
+                                        <div class="row">
+
+                                            <div class="col-md-12 col-xs-6">
+                                                <div class="form-group form-group--">
+                                                    <div class="input-group">
+                                                        <div class="input-group-addon"><i
+                                                                class="glyphicons glyphicons-dining-set"></i>
+                                                        </div>
+                                                        <input type="text"
+                                                               class="form-control"
+                                                               ng-model="currentDiaries[user.id][date].meals"
+                                                               ng-blur="saveTableData(user.id, date)"
+                                                               ng-disabled="currentDiaries[user.id][date].meal_flag || diariesDisabledFields[user.id][date]['meal_flags'] || diariesDisabledFields[user.id][date]['meals']"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12 col-xs-6">
+                                                <div class="form-group form-group--">
+                                                    <div class="input-group">
+                                                        <div class="input-group-addon"><i
+                                                                class="glyphicons glyphicons-warning-sign"></i>
+                                                        </div>
+                                                        <input type="text"
+                                                               class="form-control"/>
+                                                        <div class="input-group-addon error">
+                                                            <label>
+                                                                <i class="glyphicons glyphicons-asterisk"></i>
+                                                                <input type="checkbox" title="Превышение калорийности"/>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12 col-xs-12">
+                                                <div class="form-group">
+                                                <textarea class="form-control" placeholder="Комментарий"
+                                                          rows="5"></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="panel panel-warning">
+                                            <div class="panel-heading">
+                                                Замечания по рациону
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Сон после еды
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Алкоголь с закуской
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Перерыв от подъёма до завтрака
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Перерыв между приемами пищи
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Сладкое натощак
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Два сладких приема пищи подряд
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Длинные углеводы после обеда
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Перекусы не по методичке
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Регулярное превышение калорийности
+                                                    </label>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <label class="checkbox">
+                                                        <input type="checkbox"/>
+                                                        Марафонец голодааааааааееееет!!!
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    </div>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- /.container -->
+{% endblock %}
+
+{% block js_block %}
+{% endblock %}

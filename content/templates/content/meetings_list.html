@@ -1,0 +1,58 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+{% load bootstrap3 %}
+
+{% block title %}#ВопросыКМитингу{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+
+{% block content %}
+    <style>
+        .meeting-button {
+            margin: 8px;
+        }
+    </style>
+    <!-- Page Content -->
+    <div class="container-fluid">
+        <a name="top"></a>
+        <h1>Слушай лекцию!</h1>
+        {% if meetings.object_list|length %}
+            <div class="row">
+                {% for meeting in meetings.object_list %}
+                    <div class="col-xs-12">
+                        {% if meeting.type == 'REGULAR' %}
+                            <a class="btn btn-block btn-lg btn-info meeting-button" href="/meetings/{{ meeting.pk }}/">
+                                {% if meeting.title %}
+                                    {{ meeting.title }}
+                                {% else %}
+                                    {{ meeting.get_type_display }} <br
+                                        class="visible-xs"/>от {{ meeting.date|date:"d E Y" }} г.
+                                {% endif %}
+                            </a>
+                        {% elif meeting.type == 'NEWBIE' %}
+                            <a class="btn btn-block btn-lg btn-success meeting-button"
+                               href="/meetings/{{ meeting.pk }}/">
+                                {% if meeting.title %}
+                                    {{ meeting.title }}
+                                {% else %}
+                                    {{ meeting.get_type_display }} <br
+                                        class="visible-xs"/>от {{ meeting.date|date:"d E Y" }} г.
+                                {% endif %}
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="row">
+                <div class="col-xs-12 centered center text-center">
+                    {% bootstrap_pagination meetings extra=request.GET.urlencode %}
+                </div>
+            </div>
+        {% else %}
+            <div class="well h3">
+                Нет доступных записей лекций
+            </div>
+        {% endif %}
+    </div>
+    <!-- /.container -->
+{% endblock %}

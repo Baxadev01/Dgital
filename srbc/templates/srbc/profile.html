@@ -1,0 +1,217 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+
+
+{% block title %}Профиль участника @{{ profile_user.username }}{% endblock %}
+{% block navbar_bottom %}{% endblock %}
+{% block css_block %}
+    <link href="{% static 'css/xeditable.min.css' %}" rel="stylesheet"/>
+    <link href="{% static 'css/profile_admin.min.css' %}?v=2021042901" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'js/moment.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery-3.2.1.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery-ui.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-animate.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-sanitize.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-touch.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ui-bootstrap.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ng-file-upload.min.js' %}?v=2019060501"></script>
+    <script type="text/javascript" src="{% static 'js/libs/xeditable.min.js' %}"></script>
+
+    <script type="text/javascript"
+    src="{% static 'apps/profile_public/app.module.min.js' %}?v=2022280212"></script>
+
+    <script type="text/javascript" src="{% static 'apps/shared/stopclick/stopclickDirective.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ng-sticky.min.js' %}"></script>
+
+    <style type="text/css">
+        .zindex {
+            z-index: 997 !important;
+        }
+
+        .modal-backdrop {
+            z-index: 996 !important;
+        }
+
+        .popover-title {
+            text-align: center;
+        }
+    </style>
+
+
+
+
+{% endblock %}
+
+{% block js_block %}
+    {{ profile_serialized|json_script:"data-profile-serialized" }}
+    <script>
+        var SRBC_USER = JSON.parse(document.getElementById('data-profile-serialized').textContent);
+    </script>
+{% endblock %}
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid app-container ng-cloak" ng-app="srbcApp" ng-controller="RootCtrl">
+        <div ng-include="'{% static 'apps/shared/topmenu/alerts.html' %}'"></div>
+        {% if profile_user.profile.warning_flag == 'TEST' %}
+            <div class="bg-warning text-center text-warning">
+        {% endif %}
+        {% if profile_user.profile.warning_flag == 'OBSERVATION' %}
+            <div class="bg-info text-center text-info">
+        {% endif %}
+        {% if profile_user.profile.warning_flag == 'TREATMENT' %}
+            <div class="bg-success text-center text-success">
+        {% endif %}
+        {% if profile_user.profile.warning_flag == 'DANGER' %}
+            <div class="bg-danger text-center text-danger">
+        {% endif %}
+        {% if profile_user.profile.warning_flag == 'OK' %}
+            <div class="text-center">
+        {% endif %}
+        {% if profile_user.profile.warning_flag == 'OOC' %}
+            <div class="bg-dark text-center text-light">
+        {% endif %}
+        {% if profile_user.profile.warning_flag == 'PR' %}
+            <div class="bg-purple text-center text-light">
+        {% endif %}
+        <!-- @formatter:off -->
+        <h3>{% if profile_user.profile.is_perfect_weight %}<i
+                class="glyphicons glyphicons-certificate" title="Идеальный вес"
+        ></i>&nbsp;{% endif %}{% if profile_user.profile.is_pregnant %}<i
+                class="glyphicons glyphicons-stroller" title="Особый случай"
+        ></i>&nbsp;{% endif %}
+            @{{ profile_user.username }}
+            <span
+                    class="small">({{ profile_user.profile.wave.title }}) #{{ profile_user.pk }}</span></h3>
+        <!-- @formatter:on -->
+
+        {% if True %}
+            </div>
+        {% endif %}
+
+        <div>
+            <div class="row">
+                <div class="col-xs-12" ng-hide="true">
+                    Информация об участнике
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12" ng-hide="true">
+                    Блок статистики
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="btn-group">
+                        <label class="btn btn-primary" ng-model="display_mode" uib-btn-radio="'tiles'"
+                               ng-click="setDisplayMode('tiles')">
+                            <i class="glyphicons glyphicons-show-thumbnails"></i> Мозаика
+                        </label>
+                        <label class="btn btn-primary" ng-model="display_mode" uib-btn-radio="'ribbon'"
+                               ng-click="setDisplayMode('ribbon')">
+                            <i class="glyphicons glyphicons-list"></i> Лента
+                        </label>
+                    </div>
+                    <div class="btn-group pull-right">
+                        <label class="btn btn-success"
+                               ng-click="uploadImage()">
+                            <i class="glyphicon glyphicon-picture"></i> Загрузить фото
+                        </label>
+                    </div>
+                </div>
+                <div ng-repeat="img in stream track by $index">
+                    <div class="animate-switch-container"
+                        ng-switch on="img.image_type">
+
+                        <div ng-switch-when="DATA"
+                            class="ig_preview" ng-bind-html="img.svg_template"
+                            style="overflow: visible"
+                            ng-style="img.style"
+                            ng-class="{'has-sugar': img.has_sugar, 'has-alco': img.has_alco, 'tiles': display_mode === 'tiles'}"
+                            uib-popover-html="img.image_info"
+                            popover-append-to-body="false"
+                            popover-title="{$ img.date $}"
+                            popover-placement="{$ img.popover_position $}"
+                            popover-trigger="mouseenter"
+                            popover-enable="display_mode === 'tiles'"
+                        >   
+                        </div>
+
+                        <div ng-switch-when="MEAL" 
+                            class="ig_preview"
+                            style="overflow: visible"
+                            ng-style="img.style"
+                            ng-class="{'has-sugar': img.has_sugar, 'has-alco': img.has_alco, 'has-pers-rec-flag': img.pers_rec_fail, 'tiles': display_mode === 'tiles'}"
+                            uib-popover-html="prepareImageInfo(img.image_info)"
+                            data-html="true"
+                            popover-append-to-body="false"
+                            popover-title="{$ img.date $}"
+                            popover-placement="{$ img.popover_position $}"
+                            popover-trigger="mouseenter"
+                            popover-enable="display_mode === 'tiles'"
+                        >
+                            <div style="position: absolute;" ng-class="{'fake-meal': img.is_fake}">
+                            </div> 
+                            <svg ng-if="img.formula === 'F'" class="formula formula-f" viewBox="0 0 120 8">
+                                <text x="0" y="15">{$ img.formula $}</text>
+                            </svg>
+                            <svg ng-if="img.formula  && img.formula !== 'F'" class="formula" viewBox="0 0 120 8">
+                                <text x="0" y="15">{$ img.formula $}</text>
+                            </svg>
+                        </div>
+
+                        <div ng-switch-default
+                            class="ig_preview"
+                            style="overflow: visible"
+                            ng-style="img.style"
+                            ng-class="{'tiles': display_mode === 'tiles'}"
+                            uib-popover-html="prepareImageInfo(img.image_info)"
+                            data-html="true"
+                            popover-append-to-body="false"
+                            popover-title="{$ img.date $}"
+                            popover-placement="{$ img.popover_position $}"
+                            popover-trigger="mouseenter"
+                            popover-enable="display_mode === 'tiles'"
+                        >
+                            <svg ng-if="img.formula === 'F'" class="formula formula-f" viewBox="0 0 120 8">
+                                <text x="0" y="15">{$ img.formula $}</text>
+                            </svg>
+                            <svg ng-if="img.formula  && img.formula !== 'F'" class="formula" viewBox="0 0 120 8">
+                                <text x="0" y="15">{$ img.formula $}</text>
+                            </svg>
+                        </div>
+                    </div>
+                    <ng-container ng-if="img.custom_image_is_editable">
+                        <div class="ig_description" ng-if="display_mode === 'ribbon'">
+                            <button class="btn btn-link" ng-click="textBtnForm.$show()"
+                                    ng-hide="textBtnForm.$visible">
+                                <i class="glyphicon glyphicon-edit"></i>
+                            </button>
+                            <span
+                                    editable-textarea="img.image_info"
+                                    e-rows="5"
+                                    e-form="textBtnForm"
+                                    e-required
+                                    onbeforesave="updateImageInfo($data, img.id)">{$ img.image_info $}
+                            </span>
+                        </div>
+                    </ng-container>
+                    <ng-container ng-if="!img.custom_image_is_editable">
+                        <div class="ig_description" ng-if="display_mode === 'ribbon'"
+                             ng-bind-html="img.image_info" style="white-space: pre-line;"></div>
+                    </ng-container>
+
+                </div>
+            </div>
+            <div class="row" ng-if="streamHasMorePages">
+                <button
+                        class="btn btn-block btn-success"
+                        ng-click="getImagesStream()"
+                        ng-disabled="$root.is_loading"
+                >
+                    Ещё
+                </button>
+            </div>
+        </div>
+        <!-- /.container -->
+{% endblock %}

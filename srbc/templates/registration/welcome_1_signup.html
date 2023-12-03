@@ -1,0 +1,30 @@
+{% extends 'registration/welcome.html' %}
+{% load static %}
+
+{% block include_css %}
+    <link href="{% static 'css/mb-comingsoon.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+    {% include "blocks/progress_bar.html" %}
+
+    <div class="col-sm-12">
+        <h1 class="cursive">#selfrebootcamp</h1>
+    </div>
+
+    <h2 class="sub" style="font-size:18px; line-height: 30px;">
+        На следующих шагах вы создадите новую учетную запись и активируете свой личный кабинет. Процесс состоит из нескольких простых шагов. На страницах мастера подключения в нужных местах есть ссылки на инструкции. Техническая поддержка готова помочь, если у вас есть затруднения.
+        Первый шаг - вход. Войти или создать новую учетную запись вы можете с помощью Google, Apple ID или Telegram.
+        <br><br>
+        <a href="/accounts/login/" style="color:white; text-decoration:underline">Начать регистрацию</a> 
+    </h2>
+    
+    {#    <div class="col-sm-12 centered text-center">#}
+    {#        <a href="/accounts/login/" style="color: white; font-size: 0.8em">Пустите меня, я уже зарегистрирован!</a>#}
+    {#    </div>#}
+{% endblock %}
+
+{% block include_js %}
+    <script src="{% static 'js/jquery.mb-comingsoon.min.js' %}"></script>
+    <script src="{% static 'js/welcome_0.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load bootstrap %}
+{% load bootstrap3 %}
+{% load static %}
+
+{% block title %}Знакомство с Telegram-ботом{% endblock %}
+
+{% block css_block %}
+    <link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap-social.css' %}">
+{% endblock %}
+{% block content %}
+    <div class="container-fluid">
+        {% if user.profile.wave %}
+            <h1>Необходимо подключение чат-бота</h1>
+        {% else %}
+            {% include "blocks/progress_bar.html" %}
+            <h1>Знакомство с Telegram-ботом</h1>
+        {% endif %}
+
+        <div class="h4" class="login-logo">
+          Чат-бот Ассистент SRBC  - один из основных инструментов нашего с вами общения. Через него вы будете получать информацию от нас и сможете передавать свои сообщения.
+        </div>
+        {% if user.profile.telegram_id %}
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                <span class="h3">
+                    <i class="glyphicons glyphicons-ok-circle"></i>&nbsp;
+                    Ваш аккаунт Telegram успешно подключен
+                </span>
+                </div>
+            </div>
+
+        {% else %}
+            {% if user.profile.mobile_number %}
+                <div id="chatbot_block">
+                    {% if is_check %}
+                        <div class="panel panel-danger">
+                            <div class="panel-heading">
+                                <div class="h5">
+                                    <p>Процедура знакомства с чатботом не завершена.</p>
+                                    <p>
+                                        Пожалуйста, ознакомьтесь с
+                                        <a href="/articles/bot/" target="_blank">инструкцией по подключению чатбота</a>
+                                        и выполните все указанные в ней шаги.
+                                    </p>
+                                </div>
+                                <div class="text-center">
+                                    <a class="btn btn-success btn-lg btn-block" href="tg://resolve?domain=selfrebot"
+                                       style="margin: 1em auto;">
+                                        Перейти к чатботу @selfrebot
+                                    </a>
+                                    <a class="btn btn-info btn-block" href="./?check=1"
+                                       style="margin: 1em auto;">
+                                        Готово. Бот меня запомнил (перейти к следующему шагу)
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <div class="h5">
+                                    <p>Вам необходимо получить подтверждение подключения от чатбота <i>Ассистент SRBC</i>.</p>
+                                    <p>
+                                        Пожалуйста, перейдите к нему, нажав зеленую строку "Перейти к чатботу @selfrebot", или найдитe бота
+                                        <span style="color: black; background-color: lightgray; padding: 4px; margin: 4px; display: inline-block">@selfrebot</span>
+                                        в приложении телеграм, после чего следуйте его инструкциям. После того, как он скажет, что запомнит и сделал эскиз карандашом, вернитесь на эту страницу и нажмите кнопку "ГОТОВО. Бот меня запомнил"
+                                    </p>
+                                </div>
+                                <div class="text-center">
+                                    <a class="btn btn-success btn-lg btn-block" href="tg://resolve?domain=selfrebot"
+                                       style="margin: 1em auto;">
+                                        Перейти к чатботу @selfrebot
+                                    </a>
+                                    <a class="btn btn-info btn-block" href="./?check=1"
+                                       style="margin: 1em auto;">
+                                        Готово. Бот меня запомнил (перейти к следующему шагу)
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <a class="btn btn-block btn-primary btn-lg"
+                       onclick="$('#phone_form').show(); $('#chatbot_block').hide(); return false;">
+                        <i class="glyphicons glyphicons-phone-alt"></i>&nbsp;Изменить номер телефона
+                    </a>
+                </div>
+            {% endif %}
+            <form role="form" method="post" id="phone_form"
+                  {% if user.profile.mobile_number %}style="display: none"{% endif %}>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="h5">
+                            Для продолжения регистрации вам необходимо установить приложение Telegram на своё
+                            мобильное устройство.
+                        </div>
+                    </div>
+                </div>
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        {% csrf_token %}
+                        {% bootstrap_form_errors form type='non_fields' %}
+                        <div class="row">
+                            <div class="col-xs-12">
+                                {% bootstrap_field form.phone size='lg' form_group_class='form-group' %}
+                            </div>
+                        </div>
+                        <div class="panel panel-info">
+                            <div class="panel-heading">
+                                Если у вас возникли сложности при подключении – вам наверняка поможет <a
+                                    href="/articles/bot/">наша статья</a>.
+                            </div>
+                        </div>
+                        <br style="clear: both"/>
+                        <button class="btn btn-success pull-left" type="submit">
+                            <i class="glyphicons glyphicons-floppy-disk"></i> Сохранить
+                        </button>
+                    </div>
+                </div>
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}

@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+{% load bootstrap %}
+{% load static %}
+
+{% block title %}Оплата участия{% endblock %}
+
+{% block css_block %}
+    <link rel="stylesheet" href="https://checkout.stripe.com/v3/checkout/button.css"></link>
+    <script src="https://js.stripe.com/v3/"></script>
+
+    <style type="text/css">
+        #pp_form input[type="image"] {
+            width: 171px;
+            height: 47px;
+            border: 1px solid gray;
+            padding: 1px;
+            box-shadow: 4px 4px gray;
+            margin-left: 32px;
+            margin-bottom: 2em;
+        }
+    </style>
+
+    <style type="text/css">
+        .stripe_checkout {
+            width: 171px;
+            height: 47px;
+            border: 1px solid gray;
+            padding: 1px;
+            margin-left: 32px;
+            margin-bottom: 2em;
+        }
+    </style>
+{% endblock %}
+{% block js_block %}
+
+    <script>
+        var stripe = Stripe('{{stripe_pk}}');
+        var checkoutButton = document.getElementById('checkout-button');
+
+        checkoutButton.addEventListener('click', function () {
+            stripe.redirectToCheckout({sessionId: '{{stripe_session_id}}'})
+                .then(function (result) {
+                    // If `redirectToCheckout` fails due to a browser or network
+                    // error, you should display the localized error message to your
+                    // customer using `error.message`.
+                    if (result.error) {
+                        alert("Произошла ошибка, попробуйте позже");
+                        // надо какой-то лог или куда-то еще вывод?
+                    }
+                })
+                .catch(function (error) {
+                    // надо какой-то лог или куда-то еще вывод?
+                    alert("Произошла ошибка, попробуйте позже");
+                })
+        });
+    </script>
+
+    <script>
+        $("#show_discount_field").click(function () {
+            $("#discount_form").show();
+            $("#show_discount_field").hide();
+        });
+        $("#show_invite_form").click(function () {
+            $("#invite_form").show();
+            $("#show_invite_form").hide();
+        });
+        $("#tos_signed").click(function () {
+            $("#pay_button").prop('disabled', !document.getElementById('tos_signed').checked);
+        });
+    </script>
+
+{% endblock %}
+{% block content %}
+    <div class="container-fluid">
+        {% if not user.profile.wave %}
+            {% include "blocks/progress_bar.html" %}
+        {% endif %}
+        <h2 class="login-logo">
+            #SelfRebootCamp - оплата участия и активация акаунта
+        </h2>
+        {% if order.status == 'APPROVED' %}
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    <h3>Спасибо, оплата завершена успешно. <a href="/">Продолжить</a></h3>
+                </div>
+            </div>
+        {% else %}
+            {% if order.payment_id %}
+                {% if order.payment_provider == 'PP' %}
+                    {% if order.status == 'PENDING' %}
+                        <h2>
+                            Сумма к оплате: {{ order.amount }} {{ order.currency }} + <em>VAT<sup>*</sup></em>
+                        </h2>
+                        <h4>Перейти на сайт PayPal для оплаты</h4>
+                        <div id="pp_form">
+                            {{ pp_form.render }}
+                        </div>
+                        <div class="well well-lg">
+                            <p>
+                                <strong><sup>*</sup>Внимание</strong>: при оплате картой, выпущенной банком страны-члена
+                                Евросоюза, <strong>сумма оплаты увеличивается на VAT (налог на добавленную стоимость),
+                                установленный для этой страны.</strong>
+                            </p>
+                            <p>
+                                Полная сумма оплаты будет показана на странице платежной системы только после
+                                введения данных карты. Если сумма неверна - пожалуйста, <strong>свяжитесь с нами до
+                                оплаты</strong>!
+                            </p>
+                        </div>
+                        <p class="well">
+                            Если вы уже оплатили, но продолжаете видеть это сообщение, подождите пару минут и <a
+                                href="./">обновите страницу</a>.
+                        </p>
+                        <h4>Неверная сумма или способ оплаты? <a href="{% url 'crm:paywall-cancel' %}">Изменить
+                            платёж</a></h4>
+                    {% endif %}
+                    {% if order.status == 'PROCESSING' %}
+                        <h3>Платёж обрабатывается</h3>
+                    {% endif %}
+                {% elif order.payment_provider == 'STRIPE' %}
+                    {% if order.status == 'PENDING' %}
+                        <h2>
+                            Сумма к оплате: {{ order.amount }} {{ order.currency }}
+                        </h2>
+                        <h4>Перейти на сайт Stripe для оплаты</h4>
+                        <button id="checkout-button" class="stripe-button-el stripe_checkout">Buy now</button>
+                        <p class="well">
+                            Если вы уже оплатили, но продолжаете видеть это сообщение, подождите пару минут и <a
+                                href="./">обновите страницу</a>.
+                        </p>
+                        <h4>Неверная сумма или способ оплаты? <a href="/payment-cancel/">Изменить платёж</a></h4>
+
+                    {% endif %}
+                {% elif order.payment_provider == 'YA' or order.payment_provider == 'YM' %}
+                    <h3>Перейти на сайт Яндекс-кассы для оплаты</h3>
+                    <a class="btn btn-warning btn-lg" href="{{ order.payment_url }}">
+                        <i class="glyphicons glyphicons-credit-card"></i> Оплатить
+                    </a>
+                    <h4>Неверная сумма или способ оплаты? <a href="{% url 'crm:paywall-cancel' %}">Изменить платёж</a>
+                    </h4>
+                {% endif %}
+            {% else %}
+                {% if user.profile.wave %}
+                    <h3>
+                        {% if not user.profile.is_active %}
+                            Оплаченный Вами период пребывания в проекте подошел к концу.<br/>
+                        {% else %}
+                            На данный момент ваше участие оплачено
+                            до:&nbsp;<strong>{{ user.profile.valid_until|date:"d E Y" }} г.</strong>
+                        {% endif %}
+                    </h3>
+                {% endif %}
+                <div class="well">
+                    {% if user.profile.wave %}
+                        {% if user.application.is_payment_allowed %}
+                            Вы можете продлить участие в программе, выбрав один из вариантов оплаты.<br/>
+                        {% endif %}
+                        Если вы оплатили продление участия, и у вас есть подтверждающий это код оплаты, введите его
+                        ниже.<br/>
+                    {% else %}
+                        <!--Для присоединения к проекту оплатите участие подходящим вам способом.<br/>
+                        Оплата принимается для старта <strong>{{ user.application.campaign.title }}</strong>. <br/>
+                        Если вы хотели оплатить старт в другом месяце &ndash;
+                        <a href="{% url 'srbc:tariff-page' %}">вернитесь на шаг 6</a> и
+                        выберите нужную дату старта.<br/><br/> -->
+                    {% endif %}
+                </div>
+                {% if not user.application.is_payment_allowed %}
+                    <div class="panel panel-danger">
+                        <div class="panel-heading bg-danger text-danger">
+                            <h3>Напишите нам, мы готовы помочь!</h3>
+                            <p>
+                              Если с вами все еще не работает команда поддержки - пожалуйста, напишите нам через
+                                <a href="https://t.me/srbc_support_bot" target="_blank">телеграм-бота</a>. Если вы уже общаетесь с нашим сотрудником - напишите ему.
+                                {% if user.profile.wave %}
+                                    {% if user.profile.communication_mode == 'CHAT' %}
+                                        <!-- Чтобы получить возможность оплаты участия в проекте, пожалуйста, напишите нам в
+                                          <a href="https://t.me/srbc_support_bot" target="_blank">техподдержку</a>. -->
+                                    {% else %}
+                                      <!-- Чтобы получить возможность оплаты участия в проекте, пожалуйста, напишите нам в
+                                        <a href="https://t.me/srbc_support_bot" target="_blank">техподдержку</a>. -->
+                                    {% endif %}
+                                {% else %}
+                                <!-- Чтобы получить возможность оплаты участия в проекте, пожалуйста, напишите нам в
+                                  <a href="https://t.me/srbc_support_bot" target="_blank">техподдержку</a>. -->
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                {% else %}
+                    <div id="payment_form">
+                        <h4>Сумма к оплате:</h4>
+                        <h1>{{ order.amount }} {{ order.currency }}</h1>
+                        <small>
+                            Установочный платеж составляет 50% суммы платежа (без учёта НДС).<br/>
+                            Подробнее об установочном платеже смотрите в
+                            <a href="{% url 'content:tos-page-ru' %}" target="_blank">Пользовательском соглашении</a>
+                        </small>
+                        {#                        {% if not order.discount_code and user.profile.wave %}#}
+                        {#                            <p>#}
+                        {#                                <a class="btn btn-default btn-sm" id="show_discount_field">#}
+                        {#                                    <i class="fa fa-percent"></i> У меня есть код на скидку#}
+                        {#                                </a>#}
+                        {#                            </p>#}
+                        {#                            <div id="discount_form" style="display: none">#}
+                        {#                                <form method="post">#}
+                        {#                                    {% csrf_token %}#}
+                        {#                                    {{ discount_form|bootstrap }}#}
+                        {#                                    <button class="btn btn-primary btn-small" type="submit" name="action"#}
+                        {#                                            value="set_discount">#}
+                        {#                                        <i class="fa fa-percent"></i> Применить#}
+                        {#                                    </button>#}
+                        {#                                </form>#}
+                        {#                            </div>#}
+                        {#                        {% endif %}#}
+                        <div class="row">
+
+                            <div class="col-xs-12">
+                                <h4>Выберите платежное средство</h4>
+                            </div>
+                            <div class="pull-left" style="margin-left: 16px;margin-right: 16px;">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="provider" value="YA"/>
+                                    <button
+                                            class="btn {% if order.payment_provider == 'YA' %}btn-success{% else %}btn-info{% endif %}"
+                                            type="submit" name="action" value="set_payment">
+                                        <i class="glyphicons glyphicons-credit-card"></i> Карта российского банка
+                                    </button>
+                                </form>
+                            </div>
+                            <div class="pull-left" style="margin-right: 16px">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="provider" value="STRIPE"/>
+                                    <button
+                                            class="btn {% if order.payment_provider == 'STRIPE' %}btn-success{% else %}btn-info{% endif %}"
+                                            type="submit" name="action" value="set_payment">
+                                        <i class="glyphicons glyphicons-credit-card"></i> Карта банка другой страны
+                                    </button>
+                                </form>
+                            </div>
+                            <div class="pull-left" style="margin-right: 16px;">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="provider" value="YM"/>
+                                    <button
+                                            class="btn {% if order.payment_provider == 'YM' %}btn-success{% else %}btn-info{% endif %}"
+                                            type="submit" name="action" value="set_payment">
+                                        <i class="glyphicons glyphicons-wallet"></i> Яндекс.Деньги
+                                    </button>
+                                </form>
+                            </div>
+                            <div class="pull-left" style="margin-right: 16px">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="provider" value="PP"/>
+                                    <button
+                                            class="btn {% if order.payment_provider == 'PP' %}btn-success{% else %}btn-info{% endif %}"
+                                            type="submit" name="action" value="set_payment">
+                                        <i class="fab fa-paypal"></i> PayPal
+                                    </button>
+                                </form>
+
+                            </div>
+                        </div>
+                        {% if order.payment_provider == 'YA' or order.payment_provider == 'YM' %}
+                            <div class="panel panel-info" style="margin-top: 16px">
+                                <div class="panel-heading text-center">
+                                    Оплата будет перечислена через магазин <i>egristmin.ru</i>
+                                </div>
+                            </div>
+                        {% endif %}
+                        <div style="margin-top: 24px; margin-bottom: 24px">
+                            {% if order.is_payable %}
+                                <form method="post">
+                                    {% if not user.application.tos_signed_date %}
+                                        <div class="panel panel-warning" style="margin-top: 16px">
+                                            <div class="panel-heading">
+                                                <div class="checkbox">
+                                                    <label>
+                                                        <input type="checkbox" name="tos_signed" id="tos_signed"/>
+                                                        Я прочитал(а) и принимаю
+                                                        <a href="{% url 'content:tos-page' %}" target="_blank">условия
+                                                            участия в проекте</a> и
+                                                        <a href="{% url 'content:privacy-page-en' %}" target="_blank">соглашение
+                                                            о конфиденциальности</a>.
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    {% csrf_token %}
+                                    <button class="btn btn-primary btn-lg"
+                                            id="pay_button"
+                                            {% if not user.application.tos_signed_date %}disabled{% endif %}
+                                            type="submit" name="action" value="make_payment">
+                                        <i class="glyphicons glyphicons-fees-payments"></i> Оплатить
+                                    </button>
+                                </form>
+                            {% else %}
+                                <button class="btn btn-primary btn-lg" disabled="disabled">
+                                    <i class="glyphicons glyphicons-fees-payments"></i> Оплатить
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="col-xs-12">
+                    <h6 class="pull-right">
+                        Если вы считаете, что произошла ошибка – дайте нам знать,
+                        сообщив номер аккаунта в проекте selfrebootcamp –
+                        <b>ID:{{ user.id }}</b>
+                    </h6>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}

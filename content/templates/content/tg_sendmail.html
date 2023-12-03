@@ -1,0 +1,132 @@
+{% extends "srbc/base.html" %}
+{% load bootstrap3 %}
+{% load static %}
+{% load static bootstrap %}
+
+{% block title %}
+    Рассылка через Telegram
+{% endblock %}
+
+{% block css_block %}
+    <link href="{% static 'css/jquery-ui.min.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block js_block %}
+    <script>
+        function addTemplate(tid) {
+            var text_to_add = document.getElementById('template_' + tid).innerText;
+            document.getElementById('id_content').value = document.getElementById('id_content').value + text_to_add + "\n";
+            return false;
+        }
+    </script>
+
+    <script>
+        var ids_input = document.getElementById('id_user_ids');
+        ids_input.addEventListener('change', function () {
+            if(ids_input.value != "") {
+                document.getElementById('id_list_mode').value="IDS"
+            }
+        });   
+    </script>
+{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xs-12 col-sm-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        Шаблоны
+                    </div>
+                    <div class="panel-body">
+                        <ul class="panel-body list-group">
+                            {% for template in templates %}
+                                <li class="list-group-item list-group-item-{{ template.display_mode }}">
+                                    {{ template.title }}
+                                    <div id="template_{{ template.pk }}" style="display: none">{{ template.text }}</div>
+                                    <div class="btn btn-default btn-xs pull-right"
+                                         onclick=" return addTemplate({{ template.pk }});">
+                                        Добавить &gt;&gt;&gt;
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <form method="post" class="col-xs-12 col-sm-6">
+                {% if notifications_count %}
+                    <div class="alert alert-success" role="alert">
+                        <span class="glyphicons glyphicons-envelope" aria-hidden="true"></span>
+                        Добавлено в очередь на отправку сообщений: {{ notifications_count }}
+                    </div>
+                {% endif %}
+                {% csrf_token %}
+                {% bootstrap_form_errors form type='non_fields' %}
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        Получатели рассылки
+                    </div>
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-xs-12">
+                                {% bootstrap_field form.list_mode size='lg' form_group_class='form-group' %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                {% bootstrap_field form.campaign size='lg' form_group_class='form-group' %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                {% bootstrap_field form.wave size='lg' form_group_class='form-group' %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                {% bootstrap_field form.source_fingerprint size='lg' form_group_class='form-group' %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                {% bootstrap_field form.exclude_fingerprint size='lg' form_group_class='form-group' %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                {% bootstrap_field form.user_ids size='lg' form_group_class='form-group' %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+
+                    </div>
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-xs-12">
+                                {% bootstrap_field form.fingerprint size='lg' form_group_class='form-group' %}
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                {% bootstrap_field form.content size='lg' form_group_class='form-group' %}
+                            </div>
+                        </div>
+
+                        <button class="btn btn-warning pull-left" type="submit" name="action" value="add">
+                            <i class="glyphicons glyphicons-magic"></i> ТЕЛЕВЖУХ!
+                        </button>
+
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}

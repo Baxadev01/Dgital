@@ -1,0 +1,683 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+{% block title %}
+    Профиль участника @{{ profile_user.username }}
+{% endblock %}
+
+{% block css_block %}
+    <link href="{% static 'css/highcharts.min.css' %}" rel="stylesheet"/>
+    <link href="{% static 'css/jquery-ui.min.css' %}" rel="stylesheet"/>
+    <link href="{% static 'css/profile_admin.min.css' %}?v=2019081701" rel="stylesheet"/>
+    <link href="{% static 'css/fullcalendar.min.css' %}?v=2019081201" rel="stylesheet"/>
+    <link href="{% static 'css/fullcalendar-override.min.css' %}?v=201711252003" rel="stylesheet"/>
+
+    {# libs for fixed table (users checkpoints) #}
+    <link href="{% static 'css/dataTables.bootstrap.min.css' %}" rel="stylesheet"/>
+    <link href="{% static 'css/fixedColumns.bootstrap.min.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block js_block %}
+    <script src="{% static 'js/moment.min.js' %}"></script>
+    <script src="{% static 'js/fullcalendar.js' %}"></script>
+    <script src="{% static 'js/clipboard.js' %}"></script>
+    <script src="{% static 'js/charts/highstock.js' %}?v=7.0.3"></script>
+    <script src="{% static 'js/charts/plugin.draggable-legend.js' %}"></script>
+    <script src="{% static 'js/typeahead.js' %}"></script>
+
+    {# libs for fixed table (users checkpoints) #}
+    <script src="{% static 'js/libs/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/libs/dataTables.fixedColumns.min.js' %}"></script>
+    <script src="{% static 'js/profile_admin.min.js' %}?v=2021042901"></script>
+{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid">
+        <div class="well well-sm">
+            <div class="row">
+                <form class="form-horizontal form-group col-xs-12" id="user-filter" role="search"
+                      action="/srbc/profiles/"
+                      method="get">
+                    <div class="col-sm-6 col-lg-2 col-xs-12">
+                        <select class="form-control" name="wave" id="user_wave">
+                            <option value="">Все потоки</option>
+                            {% for wave in waves %}
+                                <option value="{{ wave.pk }}">Поток {{ wave.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-sm-6 col-lg-10 col-xs-12">
+                        <input type="text" class="form-control typeahead" id="user_username" name="username"
+                               placeholder="Username">
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% if profile_user %}
+            <div id="srbc_user_data">
+            {% if profile_user.profile.warning_flag == 'TEST' %}
+                <div class="bg-warning text-center text-warning">
+            {% endif %}
+            {% if profile_user.profile.warning_flag == 'OBSERVATION' %}
+                <div class="bg-info text-center text-info">
+            {% endif %}
+            {% if profile_user.profile.warning_flag == 'TREATMENT' %}
+                <div class="bg-success text-center text-success">
+            {% endif %}
+            {% if profile_user.profile.warning_flag == 'DANGER' %}
+                <div class="bg-danger text-center text-danger">
+            {% endif %}
+            {% if profile_user.profile.warning_flag == 'OOC' %}
+                <div class="bg-dark text-center text-light">
+            {% endif %}
+            {% if profile_user.profile.warning_flag == 'PR' %}
+                <div class="bg-purple text-center text-light">
+            {% endif %}
+        {% if profile_user.profile.warning_flag == 'OK' %}
+            <div class="text-center">
+        {% endif %}
+        <!-- @formatter:off -->
+        <h3>{% if profile_user.profile.is_perfect_weight %}<i
+                class="glyphicons glyphicons-certificate" title="Идеальный вес"
+        ></i>&nbsp;{% endif %}{% if profile_user.profile.baby_case == 'FEEDING' %}<i
+                class="glyphicons glyphicons-stroller"
+                title="Особый случай - кормящая с {{ profile_user.profile.baby_birthdate }}"
+        ></i>&nbsp;{% endif %}{% if profile_user.profile.baby_case == 'PREGNANT' %}<i
+                class="glyphicons glyphicons-heartbeat"
+                title="Особый случай - беременная. ПДР – {{ profile_user.profile.baby_birthdate }}"
+        ></i>&nbsp;{% endif %}<a href="/admin/srbc/profile/{{ profile_user.profile.pk }}/" target="_blank">
+            @{{ profile_user.username }}
+        </a><span
+                class="small">({{ profile_user.profile.wave.title }}) #{{ profile_user.pk }}</span></h3>
+        <!-- @formatter:on -->
+
+        {% if True %}
+            </div>
+        {% endif %}
+
+        <div>
+            <!-- Nav tabs -->
+            <ul id="menu_tabs" class="nav nav-tabs" role="tablist">
+                <li role="presentation" class="active">
+                    <a href="#charts" aria-controls="charts" role="tab" data-toggle="tab">
+                        <i class="glyphicons glyphicons-charts"></i> Графики
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">
+                        <i class="glyphicons glyphicons-user"></i> Профиль
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a href="#notes" aria-controls="notes" role="tab" data-toggle="tab">
+                        <i class="glyphicons glyphicons-notes"></i> Заметки
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a href="#doc" aria-controls="doc" role="tab" data-toggle="tab">
+                        <i class="glyphicons glyphicons-doctor"></i> Медицинское
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a href="#diaries" aria-controls="diaries" role="tab" data-toggle="tab">
+                        <i class="glyphicons glyphicons-calendar"></i> Данные
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a href="#checkpoints" aria-controls="checkpoints" role="tab" data-toggle="tab">
+                        <i class="glyphicons glyphicons-important-day"></i> Контрольные точки
+                    </a>
+                </li>
+                <li role="presentation">
+                    <a href="https://instagram.com/{{ profile_user.profile.instagram }}/" target="_blank">
+                        <i class="social social-instagram"></i> Instagram
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Tab panes -->
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="charts">
+                    <div class="row">
+                        <div class="col-lg-7" style="position: relative;">
+                            <div id="srbc_user_chart"></div>
+                            {#                                    <button id="chart_legend_toggle" class="btn btn-default btn-xs">Легенда</button>#}
+                        </div>
+                        <div class="col-lg-5">
+                            <div id="srbc_user_stat" class="well well-sm" style="display: none;">
+                                <div>
+                                    <label>Дата начала участия:</label>&nbsp;
+                                    <span id="date_start"></span> (<span id="start_weeks_count"></span> нед.)
+                                </div>
+                                <div>
+                                    <label>&Delta; веса/trueweight от старта:</label>&nbsp;
+                                    <span id="weight_delta_start"></span> (<span
+                                        id="trueweight_delta_start"></span>)
+                                </div>
+                                <div>
+                                    <label>Потерянный % массы тела от старта:</label>&nbsp;
+                                    <span id="trueweight_percent_start"></span>
+                                </div>
+                                <div>
+                                    <label>Скорость изменения массы тела от старта:</label>&nbsp;
+                                    <span id="trueweight_delta_weekly"></span> кг/нед.
+                                </div>
+                                <div>
+                                    <label>&Delta; веса/trueweight за период:</label>&nbsp;
+                                    <span id="weight_delta_interval"></span> (<span
+                                        id="trueweight_delta_interval"></span>)
+                                </div>
+                                <div>
+                                    <label>Соответствие рациона перс. рек. за период:</label>
+                                    <span id="meal_pers_rec_ok_days_count"></span>/<span
+                                        id="meal_pers_rec_total_days_count"></span>
+                                </div>
+                                <div>
+                                    <label>Жиронакопительных действий/дней за период:</label>&nbsp;
+                                    <span id="faults_total_count"></span>&nbsp;
+                                    (<span id="faulty_days_count"></span>/<span id="meal_days_count"></span>)
+                                    <a href="#" id="fault_stat_toggle">Подробнее</a>
+                                    <div id="fault_stat" style="display: none;"></div>
+                                </div>
+                                <div>
+                                    <label>% от нормы/выполнение по шагам:</label>&nbsp;
+                                    <span id="steps_avg_interval"></span>&nbsp;
+                                    (<span id="steps_complete_interval"></span>/<span
+                                        id="steps_count_interval"></span>)
+                                </div>
+                                <div>
+                                    <label>% от нормы/выполнение по сну:</label>&nbsp;
+                                    <span id="sleep_avg_interval"></span>&nbsp;
+                                    (<span id="sleep_complete_interval"></span>/<span
+                                        id="sleep_count_interval"></span>)
+                                </div>
+                            </div>
+                            <label>Отображение инстаграм-постов</label>
+                            <div>
+                                <div class="btn-group" data-toggle="buttons" id="ig_view_mode">
+                                    <label class="btn btn-primary active">
+                                        <input name="ig_view_mode" type="radio" autocomplete="off" checked
+                                               value="THUMB">
+                                        <i class="glyphicons glyphicons-show-thumbnails"></i>
+                                    </label>
+                                    <label class="btn btn-primary">
+                                        <input name="ig_view_mode" type="radio" autocomplete="off" value="LIST">
+                                        <i class="glyphicons glyphicons-show-thumbnails-with-lines"></i>
+                                    </label>
+                                    <label class="btn btn-primary">
+                                        <input name="ig_view_mode" type="radio" autocomplete="off" value="OFF">
+                                        <i class="glyphicons glyphicons-ban-circle"></i>
+                                    </label>
+                                </div>
+                                {#                                <div>#}
+                                {#                                    <label class="radio_images">#}
+                                {#                                        <label class="radio-inline"><input type="radio" name="radio_images"#}
+                                {#                                                                           value="srbc_images"#}
+                                {#                                                                           checked>SRBCImages</label>#}
+                                {#                                        <label class="radio-inline"><input type="radio" name="radio_images"#}
+                                {#                                                                           value="instagram_images">Instagram</label>#}
+                                {#                                    </label>#}
+                                {#                                </div>#}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" id="imgs_container"></div>
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <button class="btn btn-block btn-success" id="load_next_page" disabled="disabled">
+                                Загрузить больше фотографий
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="profile">
+                    <div class="panel panel-info">
+                        <div class="panel-heading">
+                            Анкета участника
+                        </div>
+                        <div class="panel-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group form-group-lg">
+                                        <div class="input-group">
+                                            <span class="input-group-addon">
+                                                <strong>
+                                                    <i class="glyphicons glyphicons-user"></i> Имя пользователя
+                                                </strong>
+                                            </span>
+                                            <span class="input-group-addon">
+                                                    {{ profile_user.username }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group form-group-lg">
+                                        <div class="input-group">
+                                            <span class="input-group-addon">
+                                                <strong><i class="social social-instagram"></i> Instagram</strong>
+                                            </span>
+                                            <span class="input-group-addon">
+                                                <a href="https://instagram.com/{{ profile_user.profile.instagram }}/"
+                                                   target="_blank">
+                                                    {{ profile_user.profile.instagram }}
+                                                </a>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group form-group-lg">
+                                        <div class="input-group">
+                                            <span class="input-group-addon">
+                                                <strong>
+                                                    <i class="glyphicons glyphicons-buoy"></i>
+                                                    Поток
+                                                </strong>
+                                            </span>
+                                            <span class="input-group-addon">
+                                                {{ profile_user.profile.wave.title }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group form-group-lg">
+                                        <div class="input-group">
+                                            <span class="input-group-addon">
+                                                <strong>
+                                                    <i class="glyphicons glyphicons-light-beacon"></i>
+                                                    Уровень риска
+                                                </strong>
+                                            </span>
+                                            <span class="input-group-addon bg-danger">
+                                                {{ profile_user.profile.get_warning_flag_display }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group form-group-lg">
+                                        <div class="input-group">
+                                            <span class="input-group-addon">
+                                                <strong>
+                                                    <i class="glyphicons glyphicons-stroller"></i>
+                                                    Особый случай
+                                                </strong>
+                                            </span>
+                                            <div class="input-group-addon" style="line-height: 1.5em">
+                                                {% if profile_user.profile.baby_case == 'PREGNANT' %}
+                                                    <i class="glyphicons glyphicons-heartbeat" title="Беременная"></i>
+                                                    &nbsp;Беременная<br/>
+                                                    (ПДР: {{ profile_user.profile.baby_birthdate|date:"d.m.Y" }})
+                                                {% endif %}
+                                                {% if profile_user.profile.baby_case == 'FEEDING' %}
+                                                    <i class="glyphicons glyphicons-stroller" title="Кормящая"></i>
+                                                    &nbsp;Кормящая<br/>
+                                                    (ДР: {{ profile_user.profile.baby_birthdate|date:"d.m.Y" }})
+                                                {% endif %}
+                                                {% if profile_user.profile.baby_case == 'NONE' %}
+                                                    -
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group form-group-lg">
+                                        <div class="input-group">
+                                            <span class="input-group-addon">
+                                                <strong>
+                                                    <i class="glyphicons glyphicons-calendar"></i>
+                                                    Год рождения
+                                                </strong>
+                                            </span>
+                                            <span class="input-group-addon">
+                                                {{ profile_user.profile.birth_year }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group form-group-lg">
+                                        <div class="input-group">
+                                            <span class="input-group-addon">
+                                                <strong>
+                                                    <i class="glyphicons glyphicons-text-height"></i>
+                                                    Рост
+                                                </strong>
+                                            </span>
+                                            <span class="input-group-addon bg-danger">
+                                                {{ profile_user.application.height }} см
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group form-group-lg">
+                                        <div class="input-group">
+                                            <span class="input-group-addon">
+                                                <strong>
+                                                    <i class="glyphicons glyphicons-scale-classic"></i>
+                                                    Стартовый вес (ИМТ)
+                                                </strong>
+                                            </span>
+                                            <span class="input-group-addon bg-danger">
+                                                {{ profile_user.application.weight|floatformat }} кг
+                                                ({{ profile_user.application.imt|floatformat:2 }})
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group form-group-lg">
+                                        <div class="input-group">
+                                            <span class="input-group-addon">
+                                                <strong>
+                                                    <i class="glyphicon glyphicon-scale"></i>
+                                                    Целевой вес участника
+                                                </strong>
+                                            </span>
+                                            <span class="input-group-addon bg-danger">
+                                                {% if not profile_user.profile.goal_weight %}
+                                                    Не задан
+                                                {% else %}
+                                                    {{ profile_user.profile.goal_weight|floatformat }} кг
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    <div class="form-group form-group-lg">
+                                        <div class="input-group">
+                                            <span class="input-group-addon">
+                                                <strong>
+                                                    <i class="glyphicons glyphicons-golf-course"></i>
+                                                    Стартовые цели
+                                                </strong>
+                                            </span>
+                                            <div class="input-group-addon bg-danger"
+                                                 style="white-space: normal; text-align: left">
+                                                {{ profile_user.application.goals|linebreaksbr }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="doc">
+                    <div class="panel panel-default">
+                        <div class="panel-footer">
+                            Имеющиеся заболевания : {{ profile_user.application.sickness }}
+                        </div>
+                        <div class="panel-footer">
+                            Стартовые цели : {{ profile_user.application.goals }}
+                        </div>
+                        <div class="panel-footer">
+                            Цели участия
+                            <ul class="panel-body list-group">
+                            {% for goal in participation_goals %}
+                                <li class="list-group-item list-group-item-info">
+                                    <b>{{goal.title}}</b> <br>
+                                    Статус: {{ goal.status_text }}. {{ goal.status_changed_at|date:"Y-m-d" }}
+                                    <div>
+                                        {{ goal.text|safe }}
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        </div>
+                        <ul class="panel-body list-group">
+                            {% for note in user_docs %}
+                                <li class="list-group-item list-group-item-danger">
+                                    <i class="glyphicons glyphicons-doctor"></i>
+                                    <b>{{ note.date_added|date:"Y-m-d" }}</b>
+                                    <a class="btn btn-primary"
+                                       href="/admin/srbc/usernote/{{ note.pk }}/change"
+                                       target="_blank">
+                                        <i class="glyphicons glyphicons-edit"></i> Редактировать
+                                    </a>
+                                    <div>
+                                        {{ note.content|safe }}
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+                <div role="tabpanel" class="tab-pane" id="notes">
+                    <div class="panel panel-default">
+                        <div class="panel-footer">
+                            <div class="row">
+                                <div class="col-xs-12">
+                                    <a class="btn btn-primary"
+                                       href="/admin/srbc/usernote/add/?user={{ profile_user.pk }}&author={{ user.pk }}"
+                                       target="_blank">
+                                        <i class="glyphicons glyphicons-plus-sign"></i> Добавить
+                                    </a>
+                                    <a class="btn btn-success"
+                                       href="/profile/{{ profile_user.pk }}/analysis/new/"
+                                       target="_blank">
+                                        <i class="glyphicons glyphicons-magic"></i> Добавить анализ
+                                    </a>
+                                    <a class="btn btn-info" target="_blank"
+                                       href="/admin/srbc/usernote/?user__id__exact={{ profile_user.pk }}">
+                                        <i class="glyphicons glyphicons-list-alt"></i> Список
+                                    </a>
+
+                                </div>
+                                <div class="col-sm-8" style="display: none">
+                                        <textarea class="form-control" rows="3"
+                                                  placeholder="Текст заметки"></textarea>
+                                </div>
+
+                                {#                                <div class="col-sm-4">#}
+                                {#                                    <div class="row">#}
+                                {#                                        <div class="col-xs-12" style="display: none">#}
+                                {#                                            <a class="btn btn-primary btn-select btn-select-light">#}
+                                {#                                                <input type="hidden" class="btn-select-input" id="" name=""#}
+                                {#                                                       value=""/>#}
+                                {#                                                <span class="btn-select-value">Select an Item</span>#}
+                                {#                                                <span class='btn-select-arrow glyphicon glyphicon-chevron-down'></span>#}
+                                {#                                                <ul>#}
+                                {#                                                    <li><i class="glyphicons glyphicons-doctor"></i>#}
+                                {#                                                        Обследования/#Док#}
+                                {#                                                    </li>#}
+                                {#                                                    <li><i class="glyphicons glyphicons-magic"></i>#}
+                                {#                                                        Анализ инстаграмма#}
+                                {#                                                    </li>#}
+                                {#                                                    <li><i class="glyphicons glyphicons-exclamation-sign"></i>#}
+                                {#                                                        Заметка для комсостава#}
+                                {#                                                    </li>#}
+                                {#                                                    <li><i class="glyphicons glyphicons-chat"></i>#}
+                                {#                                                        Корректировка рекомендаций#}
+                                {#                                                    </li>#}
+                                {#                                                </ul>#}
+                                {#                                            </a>#}
+                                {#                                        </div>#}
+                                {#                                        <div class="col-xs-12" style="display: none">#}
+                                {#                                            <button class="btn btn-primary"><i#}
+                                {#                                                    class="glyphicons glyphicons-floppy-disk"></i>#}
+                                {#                                                Сохранить#}
+                                {#                                            </button>#}
+                                {#                                        </div>#}
+                                {##}
+                                {#                                    </div>#}
+                                {#                                </div>#}
+                            </div>
+                        </div>
+                        <ul class="panel-body list-group">
+                            {% for note in user_notes %}
+                                {% if note.label == 'DOC' %}
+                                    <li class="list-group-item list-group-item-danger">
+                                    <i class="glyphicons glyphicons-doctor"></i>
+                                {% endif %}
+                            {% if note.label == 'IG' %}
+                                <li class="list-group-item list-group-item-success">
+                                <i class="glyphicons glyphicons-magic"></i>
+                            {% endif %}
+                            {% if note.label == 'WTF' %}
+                                <li class="list-group-item list-group-item-danger">
+                                <i class="glyphicons glyphicons-stop-sign"></i>
+                            {% endif %}
+                            {% if note.label == 'PZDC' %}
+                                <li class="list-group-item list-group-item-success">
+                                <i class="glyphicons glyphicons-magic"></i>
+                            {% endif %}
+                            {% if note.label == 'CHAT' %}
+                                <li class="list-group-item list-group-item-info">
+                                <i class="glyphicons glyphicons-chat"></i>
+                            {% endif %}
+                            {% if note.label == 'NB' %}
+                                <li class="list-group-item list-group-item-warning">
+                                <i class="glyphicons glyphicons-exclamation-sign"></i>
+                            {% endif %}
+                            {% if note.label == 'ORG' %}
+                                <li class="list-group-item list-group-item-warning">
+                                <i class="glyphicons glyphicons-exclamation-sign"></i>
+                            {% endif %}
+                            {% if note.label == 'STAT' %}
+                                <li class="list-group-item list-group-item-success">
+                                <i class="glyphicons glyphicons-charts"></i>
+                            {% endif %}
+
+                            <b>{{ note.date_added|date:"Y-m-d" }}</b> by
+                            <b>{{ note.author.username }}</b>
+                            {% if note.is_published %}
+                                <span class="label label-success"><span
+                                        class="glyphicons glyphicons-eye-open"></span> Участнику</span>
+                            {% else %}
+                                <span class="label label-danger"><span
+                                        class="glyphicons glyphicons-eye-close"></span> Комсоставу</span>
+                            {% endif %}
+                            <div>
+                                {{ note.content|safe }}
+                                {% if note.label == 'IG' %}
+                                    <div class="panel-default panel">
+                                        <div class="panel-body">
+                                            {% if note.adjust_calories %}
+                                                Корректировка калорийности рациона:
+                                                {% if note.adjust_calories > 0 %}
+                                                    +{% endif %}{{ note.adjust_calories|safe }}%
+                                                <br/>{% endif %}
+                                            {% if note.adjust_protein %}
+                                                Корректировка белка в рационе:
+                                                {% if note.adjust_protein > 0 %}
+                                                    +{% endif %}{{ note.adjust_protein|safe }}%
+                                                <br/>{% endif %}
+                                            {% if note.add_fat %}Добавить жиров: Да<br/>{% endif %}
+                                            {% if note.adjust_fruits != 'NO' %}
+                                                Ограничение фруктов: {{ note.get_adjust_fruits_display }}
+                                                <br/>{% endif %}
+                                            {% if note.adjust_carb_mix_vegs %}Смешивать овощи: Да<br/>{% endif %}
+                                            {% if note.adjust_carb_bread_min %}Минимизировать хлеб: Да<br/>{% endif %}
+                                            {% if note.adjust_carb_bread_late %}Убрать хлеб из ужина: Да<br/>{% endif %}
+                                            {% if note.adjust_carb_carb_vegs %}Исключить запасающие овощи после обеда: Да<br/>{% endif %}
+                                            {% if note.adjust_carb_sub_breakfast %}Замена длинных углеводов на овощи (завтрак по схеме обеда): Да<br/>{% endif %}
+                                            {% if note.exclude_lactose %}Исключить молочные сахара: Да<br/>{% endif %}
+                                            {% if note.restrict_lactose_casein %}Ограничить молочные сахара и казеин вторым завтраком: Да{% endif %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="diaries">
+                    <div id="diaries_calendar"></div>
+                </div>
+
+                <div role="tabpanel" class="tab-pane" id="checkpoints">
+                    <div class="row">
+                        <div class="container">
+                            <div>
+                                <table id="user_measurements"
+                                       class="table table-bordered table-hover nowrap text-center" style="width:100%">
+                                    <thead>
+                                    <tr>
+                                        <th rowspan="2" class="text-center" style="width: 350px;">
+                                            &nbsp;
+                                        </th>
+                                        {% for date in measurements_data.dates %}
+                                            {% if forloop.first %}
+                                                <th colspan="2" class="text-center">{{ date|date:"Y-m-d" }}</th>
+                                            {% else %}
+                                                <th colspan="2" class="text-center">{{ date|date:"Y-m-d" }}</th>
+                                            {% endif %}
+                                        {% endfor %}
+
+                                    </tr>
+                                    <tr>
+                                        {% for date in measurements_data.dates %}
+                                            <th class="text-center">Замер</th>
+                                            <th class="text-center">Дельта</th>
+                                        {% endfor %}
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for title, columns in measurements_data.rows.items %}
+                                        <tr>
+                                            <td style="width: 350px;">{{ title }}</td>
+                                            {% for cols in columns %}
+                                                <td>
+                                                    {% if cols.0 == None %}
+                                                        &#63;
+                                                    {% else %}
+                                                        {{ cols.0|floatformat:1 }} см
+                                                    {% endif %}
+                                                </td>
+                                                {% if cols.1 == 0 and cols.2 == 0 %}
+                                                    <td>0</td>
+                                                {% else %}
+                                                    <td>
+                                                        {% if cols.1 == 0 %}
+                                                            0 см
+                                                        {% elif cols.1 == None %}
+                                                            &#63;
+                                                        {% else %}
+                                                            {{ cols.1|floatformat:1 }} см
+                                                        {% endif %}
+                                                        &#47;
+                                                        {% if cols.2 == 0 %}
+                                                            0 см
+                                                        {% elif cols.2 == None %}
+                                                            &#63;
+                                                        {% else %}
+                                                            {{ cols.2|floatformat:1 }} см
+                                                        {% endif %}
+                                                    </td>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+
+        </div>
+
+        </div>
+            <!-- @formatter:off -->
+            {{ profile_serialized|json_script:"data-profile-serialized" }}
+            <script>
+                var SRBC_USER = JSON.parse(document.getElementById('data-profile-serialized').textContent);
+            </script>
+            <!-- @formatter:on -->
+        {% endif %}
+        </div>
+        <!-- /.container -->
+{% endblock %}

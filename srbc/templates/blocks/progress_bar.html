@@ -1,0 +1,36 @@
+<ol>
+    <div class="row form-group">
+        <div class="col-xs-12">
+            <ul class="nav nav-pills nav-justified thumbnail setup-panel">
+                {% for item in progress_bar %}
+                    <li
+                            {% if item.is_current %}
+                                class="active"
+                            {% else %}
+                                {% if not item.is_active %}
+                                class="disabled"
+                                {% endif %}
+                            {% endif %}
+                    >
+                        <a {% if item.is_active %}href="{{ item.url }}"{% endif %}>
+                            <h4 class="list-group-item-heading">{% if item.is_passed %}<i
+                                    class="glyphicons glyphicons-ok-circle text-success"></i>&nbsp;{% else %}{% if item.is_failed %}<i
+                                    class="glyphicons glyphicons-remove-circle text-danger"></i>&nbsp;{% endif %}{% endif %}<span
+                                    class="hidden-xs">Шаг&nbsp;</span>{{ forloop.counter }}</h4>
+                            <p class="list-group-item-text hidden-sm hidden-xs">{{ item.title|safe }}</p>
+                        </a>
+                    </li>
+                {% endfor %}
+                <div class="visible-sm visible-xs setup-panel-tooltip">
+                    <h4 class="text-primary">
+                        {% for item in progress_bar %}
+                            {% if item.is_current %}
+                                Шаг&nbsp;{{ forloop.counter }}:&nbsp;{{ item.title|safe }}
+                            {% endif %}
+                        {% endfor %}
+                    </h4>
+                </div>
+            </ul>
+        </div>
+    </div>
+</ol>

@@ -1,0 +1,30 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+
+{% block title %}
+    #SelfRebootCamp – онлайн программа похудения
+{% endblock %}
+
+
+{% block css_block %}
+    <link href="{% static 'css/login.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid">
+        {% if page_slug == 'privacy_en' %}
+            {% include "content/privacy_en.html" %}
+        {% endif %}
+        {% if page_slug == 'tos' %}
+            {% include "content/tos.html" %}
+        {% endif %}
+        {% if page_slug == 'tos_ru' %}
+            {% include "content/tos_ru.html" %}
+        {% endif %}
+        {% if page_slug == 'tos_ee' %}
+            {% include "content/tos_ee.html" %}
+        {% endif %}
+    </div>
+    <!-- /.container -->
+{% endblock %}

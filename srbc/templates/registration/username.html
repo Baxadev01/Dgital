@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load bootstrap %}
+{% load static %}
+
+{% block title %}Нужно имя пользователя{% endblock %}
+
+{% block css_block %}
+    <link rel="stylesheet" href="{% static 'css/font-awesome.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/bootstrap-social.css' %}">
+{% endblock %}
+{% block content %}
+    <div class="container-fluid">
+        {% if not user.profile.wave %}
+            {% include "blocks/progress_bar.html" %}
+        {% endif %}
+
+        <h2 class="login-logo">
+          Создание псевдонима
+        </h2>
+
+        <div class="panel panel-primary">
+            <div class="panel-heading bg-primary text-primary">
+                <p><strong>
+                  Пожалуйста, придумайте себе псевдоним.
+                </strong></p>
+                <p>
+                    Псевдоним должен быть <b>уникальным</b>. Мы проверим введенное вами имя пользователя и подскажем, если оно уже занято
+                </p>
+            </div>
+        </div>
+        <div class="login-box-body">
+            <form method="post">
+                {% csrf_token %}
+                {{ form|bootstrap }}
+                <button class="btn btn-primary pull-left" type="submit">
+                    <i class="glyphicons glyphicons-floppy-disk"></i> Продолжить
+                </button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

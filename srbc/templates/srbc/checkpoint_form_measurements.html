@@ -1,0 +1,194 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+
+
+{% block title %}Контрольные замеры{% endblock %}
+{% block navbar_bottom %}{% endblock %}
+{% block css_block %}
+    <script type="text/javascript" src="{% static 'js/moment.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery-3.2.1.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery-ui.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-animate.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-sanitize.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-touch.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ui-bootstrap.js' %}"></script>
+    <script type="text/javascript"
+            src="https://cdnjs.cloudflare.com/ajax/libs/angular-i18n/1.7.2/angular-locale_ru-ru.min.js"></script>
+
+    <script type="text/javascript"
+            src="{% static 'apps/checkpoint_measurements/app.module.js' %}?v=2020123112"></script>
+
+    <script type="text/javascript" src="{% static 'apps/shared/stopclick/stopclickDirective.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ng-sticky.min.js' %}"></script>
+    <style>
+        #measurements-table .mheader {
+            min-width: 110px;
+            max-width: 110px;
+            width: 110px;
+            white-space: nowrap;
+        }
+
+        #measurements-table .mheader-input {
+            min-width: 140px;
+            max-width: 140px;
+            width: 140px !important;
+            white-space: nowrap;
+        }
+
+        {# hide datepicker "clear"-button #}
+        .uib-clear {
+            display: none;
+        }
+        {# TODO: (DEV-132) пока что решили средствами css добавить скролл в таблицу. #}
+        .table_with_scroll {
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid app-container ng-cloak" ng-app="srbcApp" ng-controller="RootCtrl">
+        <div ng-include="'{% static 'apps/shared/topmenu/alerts.html' %}'"></div>
+        <div class="panel panel-default ">
+            <div class="panel-heading">
+                <div class="panel-title">
+                    <h2>
+                        Контрольные замеры
+                    </h2>
+                </div>
+            </div>
+
+            <div class="panel-body col-xs-12 table_with_scroll">
+                <div class="row">
+                    <div class="col-xs-12"
+                         ng-class="{'col-xs-12': display_mode == 'full', 'col-lg-10': display_mode == 'work', 'col-md-6 col-sm-9': display_mode=='short'}">
+                        <div class="btn-group">
+                            <label class="btn btn-primary" ng-model="display_mode" uib-btn-radio="'short'"
+                                   ng-click="setDisplayMode('short')">
+                                <i class="glyphicons glyphicons-note"></i> Краткий
+                            </label>
+                            <label class="btn btn-primary" ng-model="display_mode" uib-btn-radio="'work'"
+                                   ng-click="setDisplayMode('work')">
+                                <i class="glyphicons glyphicons-spade"></i> Рабочий
+                            </label>
+                            <label class="btn btn-primary" ng-model="display_mode" uib-btn-radio="'full'"
+                                   ng-disabled="has_editable_checkpoint"
+                                   ng-click="setDisplayMode('full')">
+                                <i class="glyphicons glyphicons-table"></i> Полный
+                            </label>
+                        </div>
+
+                        
+                        {% if may_be_reviewed %}
+                            <div>
+                                <div class="pull-right" ng-controller="DatepickerPopupCtrl">
+                                    <input id="new_checkpoint_date" readonly
+                                        type="text" class="form-control hide"
+                                        uib-datepicker-popup
+                                        ng-model="$root.editable_checkpoint.date_obj"
+                                        is-open="popup.opened"
+                                        datepicker-options="dateOptions"
+                                        ng-required="true"
+                                        current-text="Сегодня"
+                                        close-text="Закрыть"
+                                        clear-text="Сбросить"
+                                    />
+                                    <button ng-hide="has_editable_checkpoint" class="btn btn-success"
+                                            ng-click="open()">
+                                        <i class="glyphicon glyphicon-calendar"></i> Добавить контрольный замер
+                                    </button>
+                                    <button ng-show="has_editable_checkpoint" class="btn btn-info" ng-click="open()">
+                                        <i class="glyphicon glyphicon-calendar"></i> Изменить дату
+                                    </button>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12"
+                         ng-class="{'col-xs-12': display_mode == 'full', 'col-lg-10': display_mode == 'work', 'col-md-6 col-sm-9': display_mode=='short'}">
+                        <table class="table table-striped table-hover"
+                               id="measurements-table">
+                            <thead>
+
+                            <tr>
+                                <th></th>
+                                <th class="mheader" ng-repeat="checkpoint in rendered_checkpoints">
+                                    <span ng-if="checkpoint.mode == 'date'">
+                                        {$ checkpoint.date $}
+                                        <i class="glyphicon glyphicon-edit" ng-if="checkpoint.is_editable"></i>
+                                    </span>
+                                    <span ng-if="checkpoint.mode == 'delta_start'">&Delta; от<br/>старта</span>
+                                    <span ng-if="checkpoint.mode == 'delta_date'">&Delta; от<br/>{$ checkpoint.date $}</span>
+                                </th>
+                            </tr>
+                            </thead>
+                            <tfoot>
+                            <tr>
+                                <th>&Sigma; (без роста)</th>
+                                <th ng-repeat="checkpoint in rendered_checkpoints"
+                                    ng-class="{'success': checkpoint.sum < 0 && checkpoint.mode !== 'date', 'danger': checkpoint.sum > 0  && checkpoint.mode !== 'date'}">
+                                        <span ng-if="checkpoint.mode !== 'date' && checkpoint.sum > 0"
+                                        >+</span>{$ checkpoint.sum $} см
+                                </th>
+                            </tr>
+                            </tfoot>
+                            <tbody>
+                            <tr ng-repeat="(pid, point) in $root.measure_titles">
+                                <th>
+                                    {$ point.num $}. {$ point.title $}
+                                </th>
+                                <th ng-repeat="checkpoint in rendered_checkpoints"
+                                    ng-class="{'success': checkpoint[pid] < 0 && checkpoint.mode !== 'date', 'danger': checkpoint[pid] > 0  && checkpoint.mode !== 'date'}"
+                                >
+                                    <span ng-if="!checkpoint.is_editable">
+                                        <span ng-if="checkpoint[pid] > 0 && checkpoint.mode !== 'date'"
+                                        >+</span>{$ checkpoint[pid] $}<span ng-if="checkpoint[pid] !== null"> см</span>
+                                    </span>
+                                    <div ng-if="checkpoint.is_editable" class="input-group input-group-sm">
+                                        <input class="form-control form-control-sm"
+                                               id="{$ checkpoint['id'] $}_{$ pid $}"
+                                               name="{$ checkpoint['id'] $}_{$ pid $}"
+                                               ng-blur="saveData(checkpoint, pid)"
+                                               ng-focus="setNextField(checkpoint, pid)"
+                                               ng-model="checkpoint[pid]"/>
+                                        <div class="input-group-addon">
+                                            см
+                                        </div>
+                                    </div>
+                                </th>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="row">
+                    <div style="width: auto !important;"
+                         ng-class="{'col-xs-12': display_mode == 'full', 'col-lg-10': display_mode == 'work', 'col-md-6 col-sm-9': display_mode=='short'}">
+
+                        <div class="btn-group pull-right" ng-show="has_editable_checkpoint">
+                            <button class="btn btn-danger" type="button" ng-click="deleteCheckpoint()"
+                                    ng-hide="$root.editable_checkpoint.is_measurements_done">
+                                <i class="glyphicon glyphicon-trash"></i> Удалить
+                            </button>
+
+                            <button class="btn btn-success" type="button"
+                                    ng-click="approveCheckpoint()"
+                                    ng-disabled="!editable_checkpoint.is_measurements_done">
+                                <i class="glyphicon glyphicon-save"></i> Отправить на анализ
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}

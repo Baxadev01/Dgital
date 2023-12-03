@@ -1,0 +1,232 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+
+
+{% block title %}Контрольные фото{% endblock %}
+{% block navbar_bottom %}{% endblock %}
+{% block css_block %}
+    <script type="text/javascript" src="{% static 'js/moment.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery-3.2.1.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery-ui.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-animate.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-sanitize.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-touch.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ui-bootstrap.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/fabric/fabric.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/fabric/ngFabric.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/fabric/fabricCanvas.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/fabric/fabricConstants.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/fabric/fabricDirective.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/fabric/fabricDirtyStatus.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/fabric/fabricUtilities.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/fabric/fabricWindow.js' %}"></script>
+
+    <script type="text/javascript"
+            src="{% static 'apps/checkpoint_collages/app.module.min.js' %}?v=2020123112"></script>
+
+    <script type="text/javascript" src="{% static 'apps/shared/stopclick/stopclickDirective.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ng-sticky.min.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid app-container ng-cloak" ng-app="srbcApp" ng-controller="RootCtrl">
+        <div ng-include="'{% static 'apps/shared/topmenu/alerts.html' %}'"></div>
+        <div class="panel panel-default ">
+            <div class="panel-heading">
+                <div class="panel-title">
+                    <h2>
+                        Редактор коллажей / <a href="/photos/" style="font-size: 22px;">Загрузка фотографий</a>
+                    </h2>
+                </div>
+            </div>
+
+            <div class="panel-body col-xs-12">
+                <div class="row" style="margin-bottom: 16px">
+                    <strong>Выберите дату</strong>
+                    <div class="col-xs-12">
+                        <select class="form-control" ng-options="f as f.title for f in photo_data"
+                                ng-model="selected_checkpoint"></select>
+                    </div>
+                </div>
+                <div class="row" ng-show="selected_checkpoint.collages && showCollages" style="margin-bottom: 32px;">
+                    <img class="col-xs-12 col-md-6 col-lg-4" ng-repeat="collage in selected_checkpoint.collages"
+                         style="max-width: 100%" ng-src="{$ collage.image $}"/>
+                </div>
+                <div class="row" style="margin-bottom: 16px">
+                    <div class="col-xs-12 col-md-3 col-lg-5">
+                        <div ng-show="selected_checkpoint.date" style="margin-bottom: 16px">
+                            <div class="row" style="margin-bottom: 16px">
+                                <div class="btn btn-success col-xs-12"
+                                     ng-click="toggleShowCollages(selected_checkpoint.collages)"
+                                     ng-disabled="!selected_checkpoint.collages">
+                                    <i class="glyphicons glyphicons-pictures"></i> Показать / скрыть коллажи
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="btn col-xs-12"
+                                     ng-class="{'btn-info': selected_checkpoint.crop_meta.front, 'btn-warning': !selected_checkpoint.crop_meta.front}"
+                                     style="margin-bottom: 8px;"
+                                     ng-click="!selected_checkpoint.editable || setCanvasImage('front');"
+                                     ng-disabled="!selected_checkpoint.editable">
+                                    Вид спереди
+                                </div>
+                                <div class="btn col-xs-12"
+                                     ng-class="{'btn-info': selected_checkpoint.crop_meta.side, 'btn-warning': !selected_checkpoint.crop_meta.side}"
+                                     style="margin-bottom: 8px;"
+                                     ng-click="!selected_checkpoint.editable || setCanvasImage('side');" ng-disabled="!selected_checkpoint.editable">
+                                    Вид сбоку
+                                </div>
+                                <div class="btn col-xs-12"
+                                     ng-class="{'btn-info': selected_checkpoint.crop_meta.rear, 'btn-warning': !selected_checkpoint.crop_meta.rear}"
+                                     style="margin-bottom: 8px;"
+                                     ng-click="!selected_checkpoint.editable || setCanvasImage('rear');"
+                                     ng-disabled="!selected_checkpoint.editable">
+                                    Вид сзади
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 16px">
+                                <div class="btn btn-success col-xs-12"
+                                     ng-click="!currentView || !selected_checkpoint.editable || saveData();"
+                                     ng-disabled="!currentView || !selected_checkpoint.editable">
+                                    <i class="glyphicons glyphicons-floppy-saved"></i> Сохранить
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 16px">
+                                <div class="btn btn-primary col-xs-12"
+                                     ng-click="!selected_checkpoint.crop_meta.front || !selected_checkpoint.crop_meta.side || !selected_checkpoint.crop_meta.rear || buildCollage();"
+                                     ng-disabled="!selected_checkpoint.crop_meta.front || !selected_checkpoint.crop_meta.side || !selected_checkpoint.crop_meta.rear">
+                                    <i class="glyphicons glyphicons-photo-album"></i> Создать коллаж
+                                </div>
+                            </div>
+                        </div>
+                        <div ng-show="getCanvasObject('photo')">
+                            <div class="row">
+                                <div class="col-xs-12">
+                                    <strong>Настройки коллажа</strong>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 8px">
+                                <div class="col-xs-12 col-sm-6">
+                                    Наклон фотографии:
+                                </div>
+                                <div class="col-xs-12 col-sm-6">
+                                    <div class="btn btn-warning" ng-click="rotatePhoto(-1);">
+                                        <i class="glyphicons glyphicons-rotate-left"></i>
+                                    </div>
+                                    &nbsp;
+                                    <div class="btn btn-warning" ng-click="rotatePhoto(1);">
+                                        <i class="glyphicons glyphicons-rotate-right"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 8px">
+                                <div class="col-xs-12 col-sm-6">
+                                    Линия плечей:
+                                </div>
+                                <div class="col-xs-12 col-sm-6">
+                                    <div class="btn btn-danger" ng-click="moveLine('eye', -1);">
+                                        <i class="glyphicons glyphicons-arrow-up"></i>
+                                    </div>
+                                    &nbsp;
+                                    <div class="btn btn-danger" ng-click="moveLine('eye', 1);">
+                                        <i class="glyphicons glyphicons-arrow-down"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 8px">
+                                <div class="col-xs-12 col-sm-6">
+                                    Линия коленей:
+                                </div>
+                                <div class="col-xs-12 col-sm-6">
+                                    <div class="btn btn-primary" ng-click="moveLine('knee', -1);">
+                                        <i class="glyphicons glyphicons-arrow-up"></i>
+                                    </div>
+                                    &nbsp;
+                                    <div class="btn btn-primary" ng-click="moveLine('knee', 1);">
+                                        <i class="glyphicons glyphicons-arrow-down"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-bottom: 8px">
+                                <div class="col-xs-12 col-sm-6">
+                                    Контур фигуры:
+                                </div>
+                                <div class="col-xs-12 col-sm-6">
+                                    <div class="btn btn-primary" ng-click="frameReset();">
+                                        <i class="glyphicons glyphicons-vector-path-square"></i> Сбросить
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-9 col-lg-7">
+                        <div class='image-builder' parent-click="fabric.deactivateAll()">
+                            <div class='fabric-container'>
+                                <canvas style="border: 1px dashed darkgray" fabric='fabric'></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row well" style="margin-bottom: 16px">
+                    <h3>Руководство по сборке коллажей</h3>
+                    <ol>
+                        <li>
+                            Выберите дату, за которую вы хотите отредактировать фотографии
+                            (иконки в скобках в списке отражают готовность каждой из фотогорафий за эту дату к сборке
+                            коллажа)
+                        </li>
+                        <li>
+                            Выберите фотографию для редактирования, нажав на соответствующую кнопку
+                        </li>
+                        <li>
+                            Перемещайте линии, чтобы совместить их с необходимыми точками на фотографии
+                            <ul>
+                                <li>
+                                    Верхняя линия белого пунктирного прямоугольника должна совпадать с макушкой головы
+                                </li>
+                                <li>
+                                    Нижняя линия белого пунктирного прямоугольника должна совпадать с нижней точкой ног
+                                </li>
+                                <li>
+                                    Боковые линии белого пунктирного прямоугольника должны быть максимально близко к
+                                    границам
+                                    тела на фотографии
+                                </li>
+                                <li>
+                                    При этом серая вертикальная линия должна находится на середине тела
+                                </li>
+                                <li>
+                                    Красная линия должна сопадать с верхней точкой плечей
+                                </li>
+                                <li>
+                                    Синяя линия должна проходить через середину коленей
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li>
+                            После того, как все линии на фотографии выстроены, необходимо нажать кнопку СОХРАНИТЬ
+                        </li>
+                        <li>
+                            После того, как все три фотографии обработаны, необходимо нажать кнопку "Создать коллаж"
+                            (это займет некоторое время)
+                        </li>
+                        <li>
+                            Для создания СТАРТОВОГО коллажа необходимо выстроить линии на всех фотографиях в самом
+                            раннем наборе фотографий
+                        </li>
+                        <li>
+                            Для создания набора СРАВНИТЕЛЬНЫХ коллажей необходимо выстроить линии на всех фотографиях в
+                            самом раннем наборе фотографий, а также в наборе фотографий за ту дату,
+                            за которую вы хотите получить коллажи
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}

@@ -1,0 +1,140 @@
+{% load admin_tags %}
+<ul class="nav navbar-nav navbar-right">
+    {% if user.is_authenticated %}
+        {% if user.profile.is_active %}
+            <li class="dropdown">
+                <a href="#"
+                   class="dropdown-toggle"
+                   style="{% if not user.profile.wave%} display: none;{% endif %}"
+                   data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    <i class="glyphicons glyphicons-flower"></i> Ваза Знаний
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    {#                    <li><a href="/manuals/"><i class="glyphicons glyphicons-road"></i> Руководства</a></li>#}
+                    {#                    <li><a href="/articles/"><i class="glyphicons glyphicons-book-open"></i> Статьи</a></li>#}
+                    <li><a href="/recipes/"><i class="glyphicons glyphicons-plate-of-food"></i> Рецепты</a></li>
+                    <li><a href="/articles/"><i class="glyphicons glyphicons-newspaper"></i> Статьи</a></li>
+                    <li><a href="/meetings/"><i class="glyphicons glyphicons-group"></i> Лекции</a></li>
+                </ul>
+            </li>
+
+        {% endif %}
+        {% if user.is_staff %}
+            <li class="dropdown">
+                <a href="#"
+                   class="dropdown-toggle"
+                   title="Набор Юного Хакера"
+                   data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    <i class="glyphicons glyphicons-settings"></i> НЮХ
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="/trueweight/"><i class="glyphicons glyphicons-scale-classic"></i> Trueweight</a>
+                    </li>
+                    <li><a href="/tracker/mifit/"><i class="glyphicons glyphicons-watch"></i> MiFit</a></li>
+                </ul>
+            </li>
+        {% endif %}
+        {% if user.is_staff %}
+            <li class="dropdown">
+                <a href="#"
+                   class="dropdown-toggle"
+                   title="Центр Управления Похудением"
+                   data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                    <i class="glyphicons glyphicons-fireplace"></i> ЦУП
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="{% url 'srbc:staff-meal-review-go' %}"><i class="glyphicons glyphicons-medicine"></i> Анализ рационов</a></li>
+                    <li><a href="{% url 'srbc:users' %}"><i class="glyphicons glyphicons-person-running"></i> Участники</a></li>
+                    <li><a href="{% url 'srbc:sale-prodamus' %}"><i class="glyphicons glyphicons-credit-card"></i> Sale Prodamus</a></li>
+                    
+                    {% if user|has_group:"ChannelAdmin" %}
+                        <li><a href="{% url 'content:channel' %}"><i class="glyphicons glyphicons-group-chat"></i> Канал v3.0</a></li>
+                    {% endif %}
+                    <li role="separator" class="divider"></li>
+                    <li><a href="{% url 'admin:index' %}"><i class="glyphicons glyphicons-sunglasses"></i> Админ-панель</a></li>
+                </ul>
+            </li>
+        {% endif %}
+        <li class="dropdown">
+            <a href="#"
+               class="dropdown-toggle"
+               data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                <i class="glyphicons glyphicons-user"></i> {{ user.username }}
+                <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+                <li class="dropdown-header">
+                    <i class="glyphicons glyphicons-hash"></i> ID: {{ user.pk }}
+                </li>
+                {% if user.profile.is_active %}
+                    <li>
+                        <a href="/dashboard/" title="Личный кабинет"><i class="glyphicons glyphicons-dashboard"></i>
+                            Личный кабинет</a>
+                    </li>
+                    <li style="{% if not user.profile.wave%} display: none;{% endif %}">
+                        <a href="/profile/{{ user.username }}/{% if user.is_staff %}?public=1{% endif %}"
+                           title="Лента фотографий"><i class="glyphicons glyphicons-film"></i>
+                            Моя лента
+                        </a>
+                    </li>
+                    <li style="{% if not user.profile.wave%} display: none;{% endif %}">
+                        <a href="/checkpoints/measurements/" title="Контрольные замеры"><i
+                                class="glyphicons glyphicons-ruler"></i>
+                            Замеры</a>
+                    </li>
+                    <li style="{% if not user.profile.wave%} display: none;{% endif %}">
+                        <a href="/photos/" title="Контрольные фотографии"><i class="glyphicons glyphicons-camera"></i>
+                            Фотографии</a>
+                    </li>
+                    <li style="{% if not user.profile.wave%} display: none;{% endif %}">
+                        <a href="/notes/" title="Персональные рекомендации"><i class="glyphicons glyphicons-magic"></i>
+                            Персональные рекомендации</a>
+                    </li>
+                    <li style="{% if not user.profile.wave%} display: none;{% endif %}">
+                        <a href="/reports/" title="Отчёты"><i class="glyphicons glyphicons-stats"></i>
+                            Отчёты</a>
+                    </li>
+                    <li>
+                        <a href="/settings/"><i class="glyphicons glyphicons-settings"></i> Настройки</a>
+                    </li>
+                    <li role="separator" class="divider"></li>
+                {% endif %}
+                <li>
+                    <a href="#" id="top-menu-mobile-auth"
+                       onclick="return false;"><i class="glyphicons glyphicons-iphone"></i> Авторизовать приложение</a>
+                </li>
+                <li>
+                    <a href="/logout/"><i class="glyphicons glyphicons-exit"></i> Выйти</a>
+                </li>
+            </ul>
+        </li>
+
+    {% else %}
+        <li>
+            <a href="/accounts/login/"><i class="glyphicons glyphicons-keys"></i> Вход</a>
+        </li>
+    {% endif %}
+
+    {#    <li class="visible-xs">#}
+    {#        <a href="/about/">О проекте</a>#}
+    {#    </li>#}
+    {#    <li class="visible-xs">#}
+    {#        <a href="/contacts/">Контакты</a>#}
+    {#    </li>#}
+    {% if not user.is_authenticated %}
+        <li class="visible-xs">
+            <a href="/ask/">Задать вопрос</a>
+        </li>
+
+        <li class="visible-xs">
+            <a href="/privacy/">Политика конфиденциальности</a>
+        </li>
+        <li class="visible-xs">
+            <a href="/tos/">Условия участия</a>
+        </li>
+    {% endif %}
+</ul>
+

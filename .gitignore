@@ -1,0 +1,15 @@
+.idea
+.DS_Store
+config/local.py
+config/local_settings.py
+
+*.pyc
+*.session
+
+/static/*
+!/static/.gitkeep
+
+/media/*
+!/media/content/.gitkeep
+
+.DS_STORE

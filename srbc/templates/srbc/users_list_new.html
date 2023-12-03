@@ -1,0 +1,174 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+{% block title %}
+    Список участников проекта
+{% endblock %}
+
+{% block css_block %}
+    <link href="{% static 'css/datatables.min.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid wrapper">
+        <div class="panel panel-primary" style="margin-top: 1em">
+            <form method="get" class="form-inline">
+                <label class="form-control control-label{% if bookmarked_only %} bg-success-strict{% endif %}">
+                    Только "избранное"
+                    <input type="checkbox" value="1" name="bookmarked" {% if bookmarked_only %}checked{% endif %}>
+                </label>
+                <select name="club"
+                        class="form-control control-label {% if club %} bg-success-strict{% endif %}">
+                    <option value>Фильтр: клуб</option>
+                    <option value="clubonly" {% if club == 'clubonly' %}selected{% endif %}>Только клуб</option>
+                    <option value="noclub" {% if club == 'noclub' %}selected{% endif %}>Без клуба</option>
+                </select>
+                <select name="participation_mode"
+                        class="form-control control-label {% if participation_mode %} bg-success-strict{% endif %}">
+                    <option value>Фильтр: формат участия</option>
+                    <option value="chat" {% if participation_mode == 'chat' %}selected{% endif %}>Чат</option>
+                    <option value="channel" {% if participation_mode == 'channel' %}selected{% endif %}>Канал</option>
+                    <option value="non_wave" {% if participation_mode == 'non_wave' %}selected{% endif %}>Без "волны"</option>
+                </select>
+                <select name="wave_duration"
+                        class="form-control control-label {% if wave_duration %} bg-success-strict{% endif %}">
+                    <option value>Фильтр: Длительность участия</option>
+                    <option value="lte_8_weeks" {% if wave_duration == 'lte_8_weeks' %}selected{% endif %}>до 8 недель</option>
+                    <option value="gt_8_weeks" {% if wave_duration == 'gt_8_weeks' %}selected{% endif %}>больше 8 недель</option>
+                </select>
+                <select name="wave" class="form-control control-label{% if wave_id %} bg-success-strict{% endif %}">
+                    <option value="">Все потоки</option>
+                    {% for wave in waves_in_list %}
+                        <option value="{{ wave.title }}"
+                                {% if wave_id == wave.pk %}selected{% endif %}>{{ wave.title }}</option>
+                    {% endfor %}
+                    <option disabled>-------------</option>
+                    {% for wave in waves_not_in_list %}
+                        <option value="{{ wave.title }}"
+                                {% if wave_id == wave.pk %}selected{% endif %}>{{ wave.title }}</option>
+                    {% endfor %}
+                </select>
+                <select name="stat_filter"
+                        class="form-control control-label {% if stat_filter %} bg-success-strict{% endif %}">
+                    <option value>Все участники</option>
+                    <option value="to_analyze" {% if stat_filter == 'to_analyze' %}selected{% endif %}>Анализировать</option>
+                </select>
+                <input type="submit" class="btn btn-info" value="Фильтровать"/>
+            </form>
+        </div>
+        <div class="panel-body">
+            <table id="srbc_users" class="table table-striped">
+                <thead>
+                <tr>
+                    <th><i class="glyphicons glyphicons-warning-sign"></i></th>
+                    <th>Username</th>
+                    <th>Поток</th>
+                    <th>Дата начала</th>
+                    <th>Анализ ИГ</th>
+                    <th title="Недель в проекте">
+                        <i class="glyphicons glyphicons-stopwatch"></i> W
+                    </th>
+                    <th title="Неоцифрованных рационов">
+                        <i class="glyphicons glyphicons-dining-set"></i> ?
+                    </th>
+                    <th title="Полноценность / Жиронакопление (Оцифровано)">
+                        <i class="glyphicons glyphicons-dining-set"></i> M/F (D)
+                    </th>
+                    <th title="Дельта веса / дней">
+                        &Delta; <i class="glyphicons glyphicons-scale"></i>
+                    </th>
+                    <th><i class="glyphicons glyphicons-star"></i></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for srbc_user in srbc_users %}
+                    <tr data-user-id="{{ srbc_user.pk }}"
+                        data-user-username="{{ srbc_user.username }}">
+                        <td>
+                            {% if srbc_user.profile.warning_flag == 'TEST' %}
+                                <span class="text-warning signal_lights" title="Рекомендованы анализы">
+                                <span>1</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                            {% if srbc_user.profile.warning_flag == 'OBSERVATION' %}
+                                <span class="text-primary signal_lights" title="В зоне риска">
+                                <span>2</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                            {% if srbc_user.profile.warning_flag == 'TREATMENT' %}
+                                <span class="text-success signal_lights" title="Проходит лечение">
+                                <span>3</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                            {% if srbc_user.profile.warning_flag == 'DANGER' %}
+                                <span class="text-danger signal_lights" title="Нужно лечение!">
+                                <span>0</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                            {% if srbc_user.profile.warning_flag == 'OK' %}
+                                <span class="text-hidden signal_lights" title="Всё ОК">
+                                <span>4</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                            {% if srbc_user.profile.warning_flag == 'PR' %}
+                                <span class="text-purple signal_lights" title="РЕКОММЕНДАЦИИ!!!">
+                                <span>4</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                            {% if srbc_user.profile.warning_flag == 'OOC' %}
+                                <span class="text-dark signal_lights" title="Вне концепции">
+                                <span>4</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/profile/{{ srbc_user.username }}/"
+                               target="_blank"
+                            >{{ srbc_user.username }}</a>{% if srbc_user.profile.is_in_club %}&nbsp;<i
+                                class="bookmark glyphicons glyphicons-cup"></i>{% endif %}
+                        </td>
+                        <td>{{ srbc_user.profile.wave.title }}</td>
+                        <td>{{ srbc_user.profile.wave.start_date|date:"Y-m-d" }}</td>
+                        <td>{{ srbc_user.last_note|date:"Y-m-d" }}</td>
+                        <td>-</td>
+                        <td>{{ srbc_user.meals_missed }}</td>
+                        <td>
+                            <span style="display: none">{{ srbc_user.meal_total_score }}</span>
+                            {{ srbc_user.meal_scores }} / {{ srbc_user.meal_faults }} ({{ srbc_user.meals_count }} дн.)
+                        </td>
+                        <td>
+                            {% if srbc_user.weight_days.days %}
+                                <span style="display: none">{{ srbc_user.weight_delta|add:"59999" }}</span>
+                                {{ srbc_user.weight_delta|stringformat:'d' }}
+                                /
+                                {{ srbc_user.weight_days.days|stringformat:'d' }}
+                            {% else %}
+                                &mdash; / &mdash;
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="#" class="user_bookmark">
+                                {% if srbc_user.is_bookmarked %}
+                                    <i class="bookmark glyphicons glyphicons-star"></i>
+                                {% else %}
+                                    <i class="bookmark glyphicons glyphicons-star-empty"></i>
+                                {% endif %}
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}
+
+{% block js_block %}
+    <script src="{% static 'js/datatables.min.js' %}"></script>
+    <script src="{% static 'js/charts/highstock.js' %}"></script>
+    <script src="{% static 'js/typeahead.js' %}"></script>
+    <script src="{% static 'js/dashboard_admin.min.js' %}?v=2020123112"></script>
+{% endblock %}

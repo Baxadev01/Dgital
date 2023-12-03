@@ -1,0 +1,203 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+{% block title %}
+    Данные за {{ yesterday|date:"d.m" }}-{{ today|date:"d.m.Y" }}
+{% endblock %}
+
+{% block css_block %}
+{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+{% block content %}
+    <div class="container-fluid">
+        <div id="alerts-container" class="fixed">
+            <div class="alert alert-danger alert-dismissible" style="display: none;" role="alert"
+                 id="mifit_status_error">
+                <button type="button" class="close"><span aria-hidden="true">×</span></button>
+                <span class="pull-left" style="margin-right: 8px;"><i
+                        class="glyphicons glyphicons-warning-sign"></i></span>
+                <p class="content"></p>
+            </div>
+            <div class="alert alert-success alert-dismissible" style="display: none;" role="alert" id="mifit_status_ok">
+                <button type="button" class="close"><span aria-hidden="true">×</span></button>
+                <span class="pull-left"><i class="glyphicons glyphicons-ok"></i>&nbsp;</span>
+                <p class="content"></p>
+            </div>
+        </div>
+        <form class="panel panel-default" id='diary_form' method="post" data-diary_prev_weight="{{ diary_prev_weight }}">
+            {% csrf_token %}
+            <div class="panel-heading">
+                <div class="panel-title">
+                    <h2 class="row">
+                        <span class="col-sm-6 col-xs-9">Данные / <a href="../meals/" style="font-size: 22px;">Рацион</a></span>
+                        <span class="col-sm-6 col-xs-3 text-right">
+                        {% if user.profile.mifit_id %}
+                            {#                            <a class="btn btn-lg btn-primary" href="#mifit_load" id="mifit_load_btn">#}
+                            {#                                <i class="glyphicons glyphicons-refresh"></i>#}
+                            {#                                <span class="hidden-xs">Обновить данные с сервера MiFit</span>#}
+                            {#                            </a>#}
+                        {% else %}
+                            {#                            <a tabindex="0" class="btn btn-lg btn-info" id="tracker_link_info" data-trigger="focus">#}
+                            {#                                <i class="glyphicons glyphicons-info-sign"></i>#}
+                            {#                            </a>#}
+                        {% endif %}
+                        </span>
+                    </h2>
+                </div>
+            </div>
+            {% if form.errors %}
+                <div class="panel-body bg-danger text-danger">
+                    <ul>
+                        {% if form.non_field_errors %}
+                            <li>{{ form.non_field_errors|striptags }}</li>
+                        {% endif %}
+                        {% for field in form %}
+                            {% if field.errors %}
+                                <li><strong>{{ field.label }}:</strong> {{ field.errors|striptags }}</li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
+                        <div class="form-group form-group-lg">
+                            <div class="input-group">
+                                <div class="input-group-btn">
+                                    <a class="btn btn-lg btn-primary"
+                                       href="/diary/{{ yesterday|date:"Y-m-d" }}/data/">
+                                        <i class="glyphicons glyphicons-arrow-left"></i>
+                                    </a>
+                                </div>
+                                <input class="form-control text-center" readonly
+                                       value="{{ yesterday|date:"d.m" }} &ndash; {{ today|date:"d.m.Y" }}"
+                                       id="collage-date"
+                                       style="font-weight: bold;"/>
+                                <div class="input-group-btn">
+                                    {% if tomorrow %}
+                                        <a class="btn btn-lg btn-primary"
+                                           href="/diary/{{ tomorrow|date:"Y-m-d" }}/data/">
+                                            <i class="glyphicons glyphicons-arrow-right"></i>
+                                        </a>
+                                    {% else %}
+                                        <a class="btn btn-lg btn-default">
+                                            <i class="glyphicons glyphicons-arrow-right"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
+                        <div class="form-group form-group-lg">
+                            {# @formatter:off #}
+                            <div class="input-group
+
+                                    {% if form.steps.value %}{% if form.steps.errors %}has-error{% else %}has-success{% endif %}{% else %}has-error{% endif %}">
+                                <div class="input-group-addon">
+                                    &nbsp;<i class="glyphicons glyphicons-shoe-steps"></i>&nbsp;
+                                </div>
+                                <input class="form-control text-center" name="steps" id="data-steps-field"
+                                       value="{{ form.steps.value|default_if_none:"" }}"
+                                       {% if readonly %}readonly{% endif %}
+                                       placeholder="за {{ yesterday|date:"d.m.Y" }}"
+                                />
+                                <div class="input-group-addon">
+                                    шагов
+                                </div>
+                            </div>
+                            {# @formatter:on #}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
+                        <div class="form-group form-group-lg">
+                            <div class="input-group {% if diary.sleep %}has-success{% else %}has-error{% endif %}">
+                                <div class="input-group-addon">
+                                    &nbsp;<i class="glyphicons glyphicons-moon"></i>&nbsp;
+                                </div>
+                                <select name="sleep_hours" class="form-control" id="data-sleep_hours-field"
+                                        {% if readonly %}readonly{% endif %}
+                                >
+                                    {% for h in hours_range %}
+                                        <option value="{{ h }}"
+                                                {% if form.sleep_hours.value|stringformat:"s" == h|stringformat:"s" %}selected{% endif %}>{{ h }}
+                                            ч.
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="input-group-addon">
+                                    <strong>&nbsp;:&nbsp;</strong>
+                                </div>
+                                <select name="sleep_minutes" class="form-control"
+                                        id="data-sleep_minutes-field" {% if readonly %}readonly{% endif %}
+                                >
+                                    {% for m in minutes_range %}
+                                        <option value="{{ m }}"
+                                                {% if form.sleep_minutes.value|stringformat:"s" == m|stringformat:"s" %}selected{% endif %}>{{ m }}
+                                            мин.
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
+                        <div class="form-group form-group-lg">
+                            {# @formatter:off #}
+                            <div class="input-group
+
+                                    {% if form.weight.value %}{% if form.weight.errors %}has-error{% else %}has-success{% endif %}{% else %}has-error{% endif %}">
+                                <div class="input-group-addon">
+                                    &nbsp;<i class="glyphicons glyphicons-scale"></i>&nbsp;
+                                </div>
+                                <input class="form-control text-center" name="weight"
+                                       value="{% if form.weight.errors %}{{ form.weight.value }}{% else %}{{ form.weight.value|default:""|floatformat }}{% endif %}"
+                                       {% if readonly %}readonly{% endif %}
+                                       placeholder="утром {{ today|date:"d.m.Y" }}"
+                                />
+                                <div class="input-group-addon">
+                                    кг
+                                </div>
+                            </div>
+                            {# @formatter:on #}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-footer">
+                <div class="row">
+                    <div class="col-xs-6 text-left">
+                        {% if not readonly %}
+                            <button type="submit" class="btn btn-lg btn-primary">
+                                <i class="glyphicons glyphicons-floppy-disk"></i> Сохранить
+                            </button>
+                        {% endif %}
+                    </div>
+                    {#                    <div class="col-xs-6 text-right">#}
+                    {#                        <a class="btn btn-lg btn-info" href="./collage/">#}
+                    {#                            <i class="glyphicons glyphicons-picture"></i> Коллаж#}
+                    {#                        </a>#}
+                    {#                    </div>#}
+
+                </div>
+            </div>
+        </form>
+    </div>
+    <!-- /.container -->
+{% endblock %}
+
+{% block js_block %}
+    <script>
+        var START_DATE = '{{ user.profile.wave.start_date|date:"d.m.Y" }}';
+        var CURRENT_DATE = '{{ today|date:"d.m.Y" }}';
+    </script>
+{#    <script src="{% static 'js/clipboard.js' %}"></script>#}
+    <script src="{% static 'js/diary_form_data.min.js' %}?v=2020123112"></script>
+{% endblock %}

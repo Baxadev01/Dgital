@@ -1,0 +1,200 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+{% block title %}
+    Список участников проекта
+{% endblock %}
+
+{% block css_block %}
+    <link href="{% static 'css/datatables.min.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid wrapper">
+        <div class="panel panel-primary">
+            <nav class="panel-heading nav navbar-primary">
+                <div class="container-fluid">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle" data-toggle="collapse"
+                                data-target="#filter-bar-collapse">
+                            <i class="glyphicons glyphicons-filter"></i> Фильтр
+                        </button>
+                        <h1 class="panel-title">
+                            {% if inactive_only %}
+                                Неактивные
+                            {% elif bookmarked_only %}
+                                Избранные
+                            {% elif club_only %}
+                                Клубные
+                            {% elif duty_only %}
+                                Подотчётные
+                            {% else %}
+                                Действующие
+                            {% endif %}
+                            участники</h1>
+                    </div>
+                    <!-- /.navbar-collapse -->
+
+                    <div class="collapse navbar-collapse" id="filter-bar-collapse">
+                        <ul class="nav navbar-nav navbar-right">
+                            <li>
+                                {% if inactive_only or bookmarked_only or club_only or duty_only %}
+                                    <a href="./">
+                                        <i class="glyphicons glyphicons-globe"></i>&nbsp;Действующие
+                                    </a>
+                                {% endif %}
+                            </li>
+                            <li>
+
+                                {% if not bookmarked_only %}
+                                    <a href="./?bookmarked">
+                                        <i class="bookmark glyphicons glyphicons-star"></i>&nbsp;Избранное
+                                    </a>
+                                {% endif %}
+                            </li>
+                            <li>
+                                {% if not club_only %}
+                                    <a href="./?club">
+                                        <i class="bookmark glyphicons glyphicons-cup"></i>&nbsp;Клуб
+                                    </a>
+                                {% endif %}
+                            </li>
+                            <li>
+                                {% if not inactive_only %}
+                                    <a href="./?inactive">
+                                        <i class="bookmark glyphicons glyphicons-moon"></i>&nbsp;Неактивные
+                                    </a>
+                                {% endif %}
+                            </li>
+                            <li>
+                                {% if not duty_only %}
+                                    <a href="./?duty">
+                                        <i class="bookmark glyphicons glyphicons-user-structure"></i>&nbsp;Подотчётные
+                                    </a>
+                                {% endif %}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- /.container -->
+
+            </nav>
+        </div>
+        <div class="panel-body">
+            <table id="srbc_users" class="table table-striped">
+                <thead>
+                <tr>
+                    <th><i class="glyphicons glyphicons-warning-sign"></i></th>
+                    <th>Username</th>
+                    <th>Поток</th>
+                    <th>Дата начала</th>
+                    <th>Тимлид</th>
+                    <th>Анализ ИГ</th>
+                    <th title="Недель в проекте">
+                        <i class="glyphicons glyphicons-stopwatch"></i> W
+                    </th>
+                    <th title="Неоцифрованных рационов">
+                        <i class="glyphicons glyphicons-dining-set"></i> ?
+                    </th>
+                    <th title="Полноценность / Жиронакопление (Оцифровано)">
+                        <i class="glyphicons glyphicons-dining-set"></i> M/F (D)
+                    </th>
+                    <th title="Дельта веса / дней">
+                        &Delta; <i class="glyphicons glyphicons-scale"></i>
+                    </th>
+                    <th><i class="glyphicons glyphicons-star"></i></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for srbc_user in srbc_users %}
+                    <tr data-user-id="{{ srbc_user.pk }}"
+                        data-user-username="{{ srbc_user.username }}">
+                        <td>
+                            {% if srbc_user.profile.warning_flag == 'TEST' %}
+                                <span class="text-warning signal_lights" title="Рекомендованы анализы">
+                                <span>1</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                            {% if srbc_user.profile.warning_flag == 'OBSERVATION' %}
+                                <span class="text-primary signal_lights" title="В зоне риска">
+                                <span>2</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                            {% if srbc_user.profile.warning_flag == 'TREATMENT' %}
+                                <span class="text-success signal_lights" title="Проходит лечение">
+                                <span>3</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                            {% if srbc_user.profile.warning_flag == 'DANGER' %}
+                                <span class="text-danger signal_lights" title="Нужно лечение!">
+                                <span>0</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                            {% if srbc_user.profile.warning_flag == 'OK' %}
+                                <span class="text-hidden signal_lights" title="Всё ОК">
+                                <span>4</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                            {% if srbc_user.profile.warning_flag == 'PR' %}
+                                <span class="text-purple signal_lights" title="РЕКОММЕНДАЦИИ!!!">
+                                <span>4</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                            {% if srbc_user.profile.warning_flag == 'OOC' %}
+                                <span class="text-dark signal_lights" title="Вне концепции">
+                                <span>4</span><i class="glyphicons glyphicons-light-beacon"></i>
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/profile/{{ srbc_user.username }}/"
+                               target="_blank"
+                            >{{ srbc_user.username }}</a>{% if srbc_user.profile.is_in_club %}&nbsp;<i
+                                class="bookmark glyphicons glyphicons-cup"></i>{% endif %}
+                        </td>
+                        <td>{{ srbc_user.profile.wave.title }}</td>
+                        <td>{{ srbc_user.profile.wave.start_date|date:"Y-m-d" }}</td>
+                        <td style="font-weight: bold;">{{ srbc_user.profile.group_leader.username }}</td>
+                        <td>{{ srbc_user.last_note|date:"Y-m-d" }}</td>
+                        <td>-</td>
+                        <td>{{ srbc_user.meals_missed }}</td>
+                        <td>
+                            <span style="display: none">{{ srbc_user.meal_total_score }}</span>
+                            {{ srbc_user.meal_scores }} / {{ srbc_user.meal_faults }} ({{ srbc_user.meals_count }} дн.)
+                        </td>
+                        <td>
+                            {% if srbc_user.weight_days.days %}
+                                <span style="display: none">{{ srbc_user.weight_delta|add:"59999" }}</span>
+                                {{ srbc_user.weight_delta|stringformat:'d' }}
+                                /
+                                {{ srbc_user.weight_days.days|stringformat:'d' }}
+                            {% else %}
+                                &mdash; / &mdash;
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="#" class="user_bookmark">
+                                {% if srbc_user.pk in bookmarked_users %}
+                                    <i class="bookmark glyphicons glyphicons-star"></i>
+                                {% else %}
+                                    <i class="bookmark glyphicons glyphicons-star-empty"></i>
+                                {% endif %}
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}
+
+{% block js_block %}
+    <script src="{% static 'js/datatables.min.js' %}"></script>
+    <script src="{% static 'js/charts/highstock.js' %}"></script>
+    <script src="{% static 'js/typeahead.js' %}"></script>
+    <script src="{% static 'js/dashboard_admin.min.js' %}"></script>
+{% endblock %}

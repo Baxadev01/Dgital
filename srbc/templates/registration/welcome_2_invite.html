@@ -1,0 +1,33 @@
+{% extends 'registration/welcome.html' %}
+{% load static %}
+
+{% block include_css %}
+<link href="{% static 'css/mb-comingsoon.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="col-sm-12">
+    <h1 class="cursive">Регистрация в проекте</h1>
+    <h2 class="sub">После оплаты участия, Вам был выдан персональный пригласительный код.</h2>
+    <h4 class="context">Самое время пустить его в дело!</h4>
+    <h4 class="context">Вставьте пригласительный код в поле ниже</h4>
+</div>
+<div class="col-md-6 col-md-offset-3 col-sm-8 col-sm-offset-2 centered text-center">
+    <div class="form-group form-group-lg">
+        <div class="input-group">
+            <span class="input-group-addon"><i class="fas fa-ticket-alt fa-2x"></i></span>
+            <input class="form-control" placeholder="SRBC-XX-XXXXXXXXXXXX" size="20"/>
+        </div>
+    </div>
+</div>
+<div class="col-xs-12 centered text-center">
+    <button class="btn btn-primary btn-lg">
+        <i class="fas fa-arrow-right"></i> Продолжить
+    </button>
+</div>
+{% endblock %}
+
+{% block include_js %}
+<script src="{% static 'js/jquery.mb-comingsoon.min.js' %}"></script>
+<script src="{% static 'js/welcome_0.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,51 @@
+.tg_messages .tg_message .panel-heading {
+    padding-top: 1px;
+    padding-bottom: 0;
+}
+
+.tg_message {
+    margin-bottom: 8px;
+}
+
+.tg_messages {
+    padding: 1px;
+}
+
+.tg_messages .panel-body {
+    white-space: pre-wrap;
+    white-space: -moz-pre-wrap;
+    white-space: -pre-wrap;
+    white-space: -o-pre-wrap;
+    word-wrap: break-word;
+    word-break: normal;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.tg_messages .panel-body:before {
+    content: normal;
+}
+
+.tg_messages .panel-body:after {
+    content: normal;
+}
+
+
+
+.message-icon span {
+    margin-left: 8px;
+}
+
+.reply-for-message {
+    padding-left: 20%;
+}
+
+.ig_hidden {
+    display: inline-block;
+    width: 0;
+    font-size: 0;
+}
+
+.msg-type-filter.active {
+    border: 3px solid darkseagreen;
+}

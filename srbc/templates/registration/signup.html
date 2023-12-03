@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load bootstrap %}
+{% load static %}
+
+{% block title %}Регистрация в проекте{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <h1 class="login-logo" style="margin-bottom: 24px;">
+            Регистрация в проекте #selfrebootcamp
+        </h1>
+        {% include "blocks/progress_bar.html" %}
+        <div class="login-box">
+            <div class="login-box-body">
+                <a class="btn btn-lg btn-huge btn-social btn-facebook btn-block"
+                   style="margin-bottom: 24px;"
+                   href="/social/register/facebook/{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">
+                    <i class="fab fa-facebook"></i> Войти при помощи FaceBook
+                </a>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}

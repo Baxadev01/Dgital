@@ -1,0 +1,312 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+
+
+{% block title %}Рацион{% endblock %}
+{% block navbar_bottom %}{% endblock %}
+{% block css_block %}
+    <link href="{% static 'css/diary_form_meals.min.css' %}?v=20191101" rel="stylesheet"/>
+    <script src="{% static 'js/libs/exif.min.js' %}?v=2.2.1"></script>
+    <script type="text/javascript" src="{% static 'js/moment.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery-3.2.1.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery-ui.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-animate.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-sanitize.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-touch.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ui-bootstrap.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ng-file-upload.min.js' %}?v=2019062103"></script>
+    
+    <script type="text/javascript"
+    src="{% static 'apps/diary_form_meals/app.module.min.js' %}?v=2022030220"></script>
+    <script type="text/javascript"
+            src="{% static 'apps/shared/meal/mealDirective.min.js' %}?v=2021102014"></script>
+
+    <script type="text/javascript"
+            src="{% static 'apps/shared/meal_datetime/mealDateTimeDirective.min.js' %}?v=2019112401"></script>
+
+    <script type="text/javascript" src="{% static 'apps/shared/stopclick/stopclickDirective.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ng-sticky.min.js' %}"></script>
+{% endblock %}
+
+{% block js_block %}
+    {{ profile_serialized|json_script:"data-profile-serialized" }}
+    {{ meal_recommendations|json_script:"data-meal-recommendations" }}
+    <script>
+        var TODAY = '{{ today|date:"Y-m-d" }}';
+        var START_DATE = '{{ user.profile.wave.start_date|date:"d.m.Y" }}';
+        var CURRENT_DATE = '{{ today|date:"d.m.Y" }}';
+        var SRBC_USER = JSON.parse(document.getElementById('data-profile-serialized').textContent);
+        var MEAL_RECOMMENDATIONS = JSON.parse(document.getElementById('data-meal-recommendations').textContent);
+    </script>
+{% endblock %}
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid app-container ng-cloak" ng-app="srbcApp" ng-controller="RootCtrl" ng-cloak>
+        <div id="overlay" ng-if="$root.image_is_processing"></div>
+        <div ng-include="'{% static 'apps/shared/topmenu/alerts.html' %}'"></div>
+        <div class="panel panel-default" ng-show="loadingIsDone">
+            <div class="panel-heading">
+                <div class="panel-title">
+                    <h2>
+                        Рацион / <a href="../data/" style="font-size: 22px;">Данные</a>
+                    </h2>
+                </div>
+            </div>
+            <div class="panel-body col-md-6">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <div class="form-group form-group-lg">
+                            <div class="input-group">
+                                <div class="input-group-btn">
+                                    <a class="btn btn-lg btn-primary"
+                                       href="/diary/{{ yesterday|date:"Y-m-d" }}/meals/">
+                                        <i class="glyphicons glyphicons-arrow-left"></i>
+                                    </a>
+                                </div>
+                                <input class="form-control text-center" readonly
+                                       value="Рацион за {{ yesterday|date:"d.m.Y" }}"
+                                       id="collage-date" jqdatepicker
+                                       style="font-weight: bold;"/>
+                                <div class="input-group-btn">
+                                    {% if tomorrow %}
+                                        <a class="btn btn-lg btn-primary"
+                                           href="/diary/{{ tomorrow|date:"Y-m-d" }}/meals/">
+                                            <i class="glyphicons glyphicons-arrow-right"></i>
+                                        </a>
+                                    {% else %}
+                                        <a class="btn btn-lg btn-default">
+                                            <i class="glyphicons glyphicons-arrow-right"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row"
+                     style="padding-top: 8px; padding-bottom: 8px; background-color: #fff"
+                     sticky offset="50"
+                     ng-show="!$root.is_locked"
+                >
+                    <div ng-class="{'col-xs-10': $root.display_mode === 'meal', 'col-xs-12': $root.display_mode === 'review'}">
+                        <button class="btn btn-primary btn-block" ng-click="saveDayData()">
+                            <i class="glyphicons glyphicons-floppy-disk"></i> Сохранить
+                        </button>
+                    </div>
+                    <div class="col-xs-2" ng-hide="$root.display_mode === 'review'">
+                        <button class="btn btn-default btn-block" ng-click="overviewMeals()">
+                            <i class="glyphicons glyphicons-eye-open"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="row" style="margin-bottom: 8px;">
+                    <div class="col-xs-12" ng-show="!$root.is_locked && may_be_reviewed">
+                        <button class="btn btn-success btn-sm btn-block" ng-click="saveMealData(true)"
+                                ng-disabled="!may_be_submitted"
+                        >
+                            <i class="glyphicons glyphicons-tick"></i> Отправить на анализ
+                        </button>
+                        <div ng-if="!may_be_submitted || !meal_image.image"
+                             class="bg-warning text-warning">
+                            <ul>
+                                <li ng-if="!may_be_submitted">
+                                    Отправка рациона возможна после 6:00 (утра) следуюшего дня
+                                </li>
+                                {#                                <li ng-if="!meal_image.image">Необходимо загрузить#}
+                                {#                                    коллаж с рационом#}
+                                {#                                </li>#}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-xs-12" ng-show="$root.is_locked">
+                        <button class="btn btn-lg btn-block"
+                                ng-class="{'btn-success': !$root.is_fake, 'btn-blame': $root.is_fake}"
+                                ng-click="ig_text_show = !ig_text_show">
+                            <i class="glyphicons glyphicons-article"></i> Показать описание
+                        </button>
+                    </div>
+
+                    <div class="col-xs-12" ng-if="ig_text_show" style="margin-top: 8px;">
+                        <textarea class="form-control" ng-model="ig_text" rows="4"></textarea>
+                    </div>
+                </div>
+                <div id="review_container" ng-show="$root.display_mode == 'review'">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <div class="alert alert-warning alert-content">
+                                Сохранение формулы закроет рацион, внести описание будет невозможно.<br/>
+                                Анализ рациона и рекомендации будут опираться только на вашу оцифровку.
+                            </div>
+                        </div>
+                    </div>
+{#                    <self-review-form></self-review-form>#}
+                </div>
+                <div class="row" id="meals_container" ng-show="$root.display_mode == 'meal'">
+                    <div class="col-xs-12">
+                        <div class="panel" ng-class="{'panel-success': wake_up_ok(), 'panel-danger': !wake_up_ok()}"
+                             style="margin-bottom: 12px;">
+                            <div class="panel-heading">
+                                <div class="row">
+                                    <div class="col-xs-5 column">
+                                        <div class="input-group">
+                                            <span class="input-group-addon"><i class="glyphicons glyphicons-clock"></i></span>
+
+                                            <meal-date-time ng-if="$root.is_locked" datetime="day_data.wakeup_time"></meal-date-time>
+                                            <input ng-if="!$root.is_locked"
+                                                   type="time" step="300" class="form-control meal-time"
+                                                   ng-model="day_data.wakeup_time"
+                                                   placeholder="HH:MM"
+                                            />
+
+                                        </div>
+                                    </div>
+                                    <div class="panel-title col-xs-7 column meal-title">
+                                        Подъём
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-12" ng-if="!$root.is_locked">
+                        <button class="btn btn-default btn-block add-food"
+                                ng-click="addMeal('PREBREAKFAST', null, -1)">
+                            <i class="glyphicons glyphicons-plus"></i> Предзавтрак
+                        </button>
+                    </div>
+
+                    <meal ng-repeat-start="meal in meals" obj="meal"></meal>
+                    <div class="col-xs-6" ng-if="!$root.is_locked">
+                        <button class="btn btn-default btn-block add-food"
+                                ng-click="addMeal('SNACK', null, meal)">
+                            <i class="glyphicons glyphicons-plus"></i> Перекус
+                        </button>
+                    </div>
+                    <div class="col-xs-6" ng-repeat-end ng-if="!$root.is_locked">
+                        <button class="btn btn-default btn-block add-food"
+                                ng-click="addMeal('SLEEP', null, meal)">
+                            <i class="glyphicons glyphicons-plus"></i> Сон
+                        </button>
+                    </div>
+                    <div class="col-xs-6" ng-repeat-end ng-if="!$root.is_locked">
+                        <button class="btn btn-default btn-block add-food"
+                                ng-click="addMeal('HUNGER', null, meal)">
+                            <i class="glyphicons glyphicons-plus"></i> Чувство голода
+                        </button>
+                    </div>
+                    <div class="col-xs-6" ng-repeat-end ng-if="!$root.is_locked">
+                        <button class="btn btn-default btn-block add-food"
+                                ng-click="addMeal('BLOOD_GLUCOSE', null, meal)">
+                            <i class="glyphicons glyphicons-plus"></i> Замер уровня глюкозы в крови
+                        </button>
+                    </div>
+
+                    <div class="col-xs-12">
+                        <div class="panel" ng-class="{'panel-success': gotobed_ok(), 'panel-danger': !gotobed_ok()}"
+                             style="margin-bottom: 12px;">
+                            <div class="panel-heading">
+                                <div class="row">
+                                    <div class="col-xs-5 column" style="z-index: 6;">
+                                        <div class="input-group">
+                                            <span class="input-group-addon"><i class="glyphicons glyphicons-clock"></i></span>
+
+                                            <meal-date-time ng-if="$root.is_locked" datetime="day_data.bed_time" aftermidnight="day_data.bed_time_is_next_day"></meal-date-time>
+                                            <input ng-if="!$root.is_locked"
+                                                   type="time" step="300" class="form-control meal-time"
+                                                   ng-model="day_data.bed_time"
+                                                   placeholder="HH:MM"
+                                            />
+                                            <div class="input-group-addon"
+                                                 uib-tooltip="После полуночи" tooltip-append-to-body="true"
+                                                 ng-show="!$root.is_locked">
+                                                <label>
+                                                    <i class="glyphicons glyphicons-moon"></i>
+                                                    <input type="checkbox" ng-model="day_data.bed_time_is_next_day"
+                                                           ng-value="true"
+                                                           title="После полуночи"
+                                                           ng-readonly="$root.is_locked"/>
+                                                </label>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                    <div class="panel-title col-xs-7 column meal-title night-meal">
+                                        Отбой
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-12">
+                        <div class="panel" ng-class="{'panel-info': water_ok(), 'panel-warning': !water_ok()}"
+                             style="margin-bottom: 12px;">
+                            <div class="panel-heading">
+                                <div class="row">
+                                    <div class="col-xs-5 column">
+                                        <div class="input-group">
+                                        <span class="input-group-addon"
+                                              style="font-size: x-large; overflow: hidden; margin-bottom: 0; padding: 0; padding-left: 6px; padding-right: 8px;">
+                                            🚰
+                                        </span>
+                                            <input type="number" step="0.2" class="form-control meal-time"
+                                                   ng-model="day_data.water_consumed"
+                                                   ng-readonly="$root.is_locked"
+                                            />
+                                            <span class="input-group-addon">л</span>
+
+                                        </div>
+                                    </div>
+                                    <div class="panel-title col-xs-3 column meal-title">
+                                        Вода
+                                    </div>
+                                    <div class="col-xs-4" ng-show="!$root.is_locked">
+                                        <button ng-click="addWater()" class="btn btn-success btn-block">
+                                            <span style="font-size: larger">+</span> Стакан
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {#                    <div class="col-xs-12">#}
+                    {#                        <div class="panel" ng-class="{'panel-info': dairy_ok(), 'panel-warning': !dairy_ok()}"#}
+                    {#                             style="margin-bottom: 12px;">#}
+                    {#                            <div class="panel-heading">#}
+                    {#                                <div class="row">#}
+                    {#                                    <div class="col-xs-5 column">#}
+                    {#                                        <div class="input-group">#}
+                    {#                                        <span class="input-group-addon"#}
+                    {#                                              style="font-size: x-large; overflow: hidden; margin-bottom: 0; padding: 0; padding-left: 6px; padding-right: 8px;">#}
+                    {#                                            🐮#}
+                    {#                                        </span>#}
+                    {#                                            <input type="number" step="100" class="form-control meal-time"#}
+                    {#                                                   ng-model="day_data.dairy_consumed"#}
+                    {#                                                   ng-readonly="$root.is_locked"#}
+                    {#                                            />#}
+                    {#                                            <span class="input-group-addon">г</span>#}
+                    {#                                        </div>#}
+                    {#                                    </div>#}
+                    {#                                    <div class="panel-title col-xs-7 column meal-title">#}
+                    {#                                        Доп. молоко/кефир#}
+                    {#                                    </div>#}
+                    {#                                </div>#}
+                    {#                            </div>#}
+                    {#                        </div>#}
+                    {#                    </div>#}
+
+                </div>
+                <div class="row" ng-hide="$root.is_fake || !$root.is_locked">
+                    <div class="col-xs-12">
+                        <button class="btn btn-blame btn-block" ng-click="blameMeal()" style="white-space: normal;">
+                            <i class="glyphicons glyphicons-ban-circle"></i>&nbsp;
+                            Аварийная кнопка! Не нажимать!
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}

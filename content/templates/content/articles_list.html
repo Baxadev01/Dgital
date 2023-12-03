@@ -1,0 +1,47 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+{% load bootstrap3 %}
+
+{% block title %}RTFM{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+
+{% block content %}
+    <style>
+        .meeting-button {
+            margin: 8px;
+            word-wrap: break-word;
+            display: block;
+            white-space: normal;
+        }
+    </style>
+    <!-- Page Content -->
+    <div class="container-fluid">
+        <a name="top"></a>
+        <h2>Статьи и руководства</h2>
+        <div class="row">
+            {% for article in articles %}
+                <div class="col-xs-12">
+                    {% if article.is_published %}
+                        {% if article.is_public %}
+                            <a class="btn btn-block btn-lg btn-info meeting-button"
+                               href="./{{ article.slug }}/">
+                                <i class="glyphicons glyphicons-newspaper"></i>&nbsp;{{ article.title }}
+                            </a>
+                        {% else %}
+                            <a class="btn btn-block btn-lg btn-warning meeting-button"
+                               href="./{{ article.slug }}/">
+                                <i class="glyphicons glyphicons-newspaper"></i>&nbsp;{{ article.title }}
+                            </a>
+                        {% endif %}
+                    {% else %}
+                        <a class="btn btn-block btn-lg btn-danger meeting-button" href="/articles/{{ article.slug }}/">
+                            <i class="glyphicons glyphicons-newspaper"></i>&nbsp;{{ article.title }}
+                        </a>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}

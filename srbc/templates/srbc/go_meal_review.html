@@ -1,0 +1,89 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+{% block title %}
+    ОЦИФРОВКА
+{% endblock %}
+
+{% block navbar_bottom %}{% endblock %}
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid wrapper">
+        <div class="row" style="margin-top: 16px">
+            <div class="col-xs-12">
+                <span class="h2">Рационов оцифровано за сегодня: {{ meals_reviewed_today }}</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-6 col-md-3">
+                <h2>В&nbsp;очереди:&nbsp;{{ meals_count_manual }}</h2>
+                {% if meals_count_manual %}
+                    <button id="go_manual" class="btn btn-info btn-lg btn-block h1"
+                            style="padding: 2em; white-space: normal;">
+                        Приступить к оцифровке
+                    </button>
+                {% else %}
+                    <button class="btn btn-default btn-lg btn-block h1"
+                            style="padding: 2em; white-space: normal;"
+                            disabled="disabled">
+                        Все записи оцифрованы!
+                    </button>
+                {% endif %}
+            </div>
+            {% if user.is_superuser %}
+                <div class="col-sm-6 col-md-3">
+                    <h2>В&nbsp;очереди:&nbsp;{{ meals_count_auto }}</h2>
+                    {% if meals_count_auto %}
+                        <button id="go_auto" class="btn btn-info btn-lg btn-block h1"
+                                style="padding: 2em; white-space: normal;">
+                            Пропущенная автооцифровка
+                        </button>
+                    {% else %}
+                        <button class="btn btn-default btn-lg btn-block h1"
+                                style="padding: 2em; white-space: normal;"
+                                disabled="disabled">
+                            Все записи автооцифрованы!
+                        </button>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}
+
+{% block js_block %}
+    <script>
+        $("#go_manual").click(function () {
+            $.getJSON("/api/v1/staff/tools/next_meal/", {
+                "mode": '{{ ref_mode_manual }}'
+            }, function (data) {
+                var meal_user_id = data.user_id;
+                var meal_date = data.meal_date;
+
+                if (!meal_user_id) {
+                    alert("Неоцифрованных рационов не обнаружено");
+                    return;
+                }
+
+                window.location = '/user/' + meal_user_id + '/diaries/' + meal_date + '/meal/?lock=1';
+            });
+        });
+        {% if user.is_superuser %}
+            $("#go_auto").click(function () {
+                $.getJSON("/api/v1/staff/tools/next_meal/", {
+                    "mode": '{{ ref_mode_auto }}'
+                }, function (data) {
+                    var meal_user_id = data.user_id;
+                    var meal_date = data.meal_date;
+
+                    if (!meal_user_id) {
+                        alert("Неоцифрованных рационов не обнаружено");
+                        return;
+                    }
+
+                    window.location = '/user/' + meal_user_id + '/diaries/' + meal_date + '/meal/?lock=1';
+                });
+            });
+        {% endif %}
+    </script>
+{% endblock %}

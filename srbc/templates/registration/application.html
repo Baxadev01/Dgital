@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load bootstrap3 %}
+{% load static %}
+
+{% block title %}Анкета участника{% endblock %}
+{% block navbar_bottom %}{% endblock %}
+{% block content %}
+    <div class="container-fluid">
+        {% include "blocks/progress_bar.html" %}
+        <h1 class="login-logo">
+          Пожалуйста, заполните анкету.
+        </h1>
+        <p>
+          Вы можете оставить здесь пустые поля.
+          <br/>
+          Заполнение этой формы поможет сделать ваше участие в проекте наиболее эффективным.
+          Если возникнет необходимость, позднее вы сможете написать новые цели в нашем мобильном приложении,
+          а данные передать команде по запросу через бота.
+        </p>
+        {% if application and application.is_approved %}
+            <div>
+        {% else %}
+            <form role="form" method="post" name="applicationForm">
+        {% endif %}
+        {% csrf_token %}
+        {% bootstrap_form_errors form type='non_fields' %}
+        <div class="panel panel-info">
+            <h3 class="panel-heading">
+                Давайте знакомиться
+            </h3>
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-sm-6">
+                        {% bootstrap_field form.first_name size='lg' form_group_class='form-group' %}
+                    </div>
+                    <div class="col-sm-6">
+                        {% bootstrap_field form.last_name size='lg' form_group_class='form-group' %}
+                    </div>
+                </div>
+            </div>
+            <h3 class="panel-heading">
+                География
+            </h3>
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-sm-6">
+
+                        {% bootstrap_field form.country size='lg' form_group_class='form-group' %}
+                    </div>
+                    <div class="col-sm-6">
+                        {% bootstrap_field form.city size='lg' form_group_class='form-group' %}
+                    </div>
+                </div>
+            </div>
+            <h3 class="panel-heading">
+                Биология
+            </h3>
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-xs-12" id="field_container_gender">
+                        {% bootstrap_field form.gender size='lg' form_group_class='form-group form-inline' %}
+                    </div>
+                </div>
+                <div class="row">
+
+                    <div class="col-sm-4">
+                        {% bootstrap_field form.height size='lg' form_group_class='form-group' placeholder='Рост, в сантиметрах' %}
+                    </div>
+                    <div class="col-sm-4">
+                        {% bootstrap_field form.weight size='lg' form_group_class='form-group' placeholder='Вес, в килограммах' %}
+                    </div>
+                    <div class="col-sm-4">
+                        {% bootstrap_field form.birth_year size='lg' form_group_class='form-group' %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12">
+                        {% bootstrap_field form.sickness size='lg' form_group_class='form-group' placeholder='Хронические заболевания часто требуют особой осторожности, в том числе при выборе режима питания. Хорошие новости - режим питания, приведенный в соответствие с биохимией, облегчает многие из них!' %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6" style="display: none;" id="field_container_baby_case">
+                        {% bootstrap_field form.baby_case size='lg' form_group_class='form-group' label='Беременность или кормление грудью' %}
+                    </div>
+                    <div class="col-sm-6" style="display: none;" id="field_container_baby_birthdate">
+                        {% bootstrap_field form.baby_birthdate size='lg' form_group_class='form-group' label='.' placeholder='' %}
+                    </div>
+                </div>
+            </div>
+            <h3 class="panel-heading">
+                Перезагрузка
+            </h3>
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-xs-12">
+                        {% bootstrap_field form.goal_weight size='lg' form_group_class='form-group' placeholder='В килограммах' %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12">
+                        {% bootstrap_field form.goals size='lg' form_group_class='form-group' placeholder='Есть ли, кроме веса, дополнительные цели?' %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if application and application.is_approved %}
+            </div>
+        {% else %}
+            <button class="btn btn-success pull-left" type="submit">
+                <i class="glyphicons glyphicons-floppy-disk"></i> Сохранить
+            </button>
+            </form>
+        {% endif %}
+    </div>
+{% endblock %}
+{% block js_block %}
+    <script>
+        $(function () {
+
+
+            $("input", "#field_container_gender").change(function () {
+                drawForm();
+            });
+
+            $("select", "#field_container_baby_case").change(function () {
+                drawForm();
+            });
+
+            var drawForm = function () {
+                var form = document.applicationForm;
+                if (!form) {
+                    return;
+                }
+
+                var gender = form.gender.value;
+                var baby_case = form.baby_case.value;
+
+                if (gender === 'F') {
+                    $("#field_container_baby_case").show();
+                    if (baby_case === 'NONE') {
+                        $("#field_container_baby_birthdate").hide();
+                    } else {
+                        if (baby_case === 'PREGNANT') {
+                            $("label", "#field_container_baby_birthdate").text('Планируемая дата родов');
+                        } else {
+                            $("label", "#field_container_baby_birthdate").text('Дата рождения ребёнка');
+                        }
+                        $("#field_container_baby_birthdate").show();
+                    }
+                } else {
+                    $("#field_container_baby_case").hide();
+                    $("#field_container_baby_birthdate").hide();
+                }
+
+                console.log(gender);
+
+            };
+
+            drawForm();
+
+            $("#baby_birthdate_datepicker").datepicker({
+                changeMonth: true,
+                changeYear: true,
+                yearRange: "2013:2021",
+                dateFormat: "dd.mm.yy"
+            });
+        });
+    </script>
+{% endblock %}

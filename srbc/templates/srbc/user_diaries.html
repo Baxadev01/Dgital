@@ -1,0 +1,217 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+
+{% block title %}
+    Редактирование данныых участника
+{% endblock %}
+{% block navbar_bottom %}{% endblock %}
+{% block css_block %}
+    <!-- @formatter:off -->
+    {{ profile_serialized|json_script:"data-profile-serialized" }}
+    <script>
+        var SRBC_USER = JSON.parse(document.getElementById('data-profile-serialized').textContent);
+    </script>
+    <!-- @formatter:on -->
+    <script type="text/javascript" src="{% static 'js/moment.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-animate.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-sanitize.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-touch.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ui-bootstrap.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'apps/user_diaries/app.module.min.js' %}?v=2020123112"></script>
+
+    <script type="text/javascript" src="{% static 'apps/shared/stopclick/stopclickDirective.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ng-sticky.min.js' %}"></script>
+{% endblock %}
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid app-container" ng-app="srbcApp">
+        <div ng-include="'/static/' + 'apps/shared/topmenu/alerts.html'"></div>
+        <div class="panel panel-default" ng-controller="RootCtrl">
+            <div class="panel-body">
+
+                <div class="row">
+                    <div class="col-xs-8 col-sm-4">
+                        <div class="btn-group" ng-show="false">
+                            <label class="btn btn-primary" ng-model="tableDisplayData" uib-btn-checkbox="true">
+                                <i class="glyphicons glyphicons-database"></i> Данные
+                            </label>
+                            <label class="btn btn-primary" ng-model="tableDisplayFood" uib-btn-checkbox="true">
+                                <i class="glyphicons glyphicons-fast-food"></i> Рацион
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-xs-4 col-sm-2 col-sm-push-6 text-right">
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-default"
+                                    ng-click="tableSizeDown()"><i
+                                    class="glyphicons glyphicons-text-smaller"></i></button>
+                            <button class="btn btn-sm btn-default"
+                                    ng-click="tableSizeUp()"><i
+                                    class="glyphicons glyphicons-text-bigger"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-inline row" style="padding-top: 8px; padding-bottom: 8px; border-bottom: 1px solid #ddd; background-color: #FFF;" sticky offset="50">
+                    <div class="col-xs-3 col-lg-1 col-md-2 col-sm-2">
+                        <a class="btn btn-lg btn-primary btn-block" style="font-size: 24px;" ng-click="prevWeek()">
+                            <i class="glyphicons glyphicons-arrow-left"></i>
+                        </a>
+                    </div>
+                    <div class="col-xs-6 col-sm-8 col-lg-10" style="padding: 0;">
+                        <h4 class="col-sm-6 col-xs-12 text-center"
+                            style="padding: 0; margin-top: 6px; margin-bottom: 6px;"><a
+                                ng-href="/profile/{$ profile.username $}/">@{$ profile.username $}</a></h4>
+                        <h5 class="col-sm-6 col-xs-12 text-center" style="padding: 0;">{$ start_date $}&nbsp;&ndash;&nbsp;{$ end_date $}</h5>
+                    </div>
+                    <div class="col-xs-3 col-md-2 col-lg-1 col-sm-2">
+                        <a class="btn btn-lg btn-primary btn-block" style="font-size: 24px;" ng-click="nextWeek()">
+                            <i class="glyphicons glyphicons-arrow-right"></i>
+                        </a>
+
+                    </div>
+                </div>
+                <p></p>
+                <div>
+                    <div>
+                        <div class="form-horizontal" ng-class="tableSizeClass">
+                            <div class="panel panel-primary col-md-6" ng-repeat="date in currentDates">
+                                <div class="panel-body">
+                                    <div class="col-xs-5">
+                                        <label>{$ date | date:'yyyy-MM-dd' $}</label>
+                                    </div>
+                                    <div class="col-xs-7">
+                                        <div class="form-horizontal">
+                                            <div class="row">
+                                                <div class="col-sm-6">
+                                                    <div class="col-md-12 field-column" ng-show="tableDisplayData">
+                                                        <div class="form-group">
+                                                            <div class="input-group">
+                                                                <div class="input-group-addon"><i
+                                                                        class="glyphicons glyphicons-shoe-steps"></i>
+                                                                </div>
+                                                                <input type="text"
+                                                                       class="form-control wider"
+                                                                       ng-model="currentDiaries[date].steps"
+                                                                       ng-blur="saveTableData(date)"
+                                                                       ng-disabled="diariesDisabledFields[date]['steps']"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-12 field-column" ng-show="tableDisplayData">
+
+                                                        <div class="form-group form-group--">
+                                                            <div class="input-group">
+                                                                <div class="input-group-addon"><i
+                                                                        class="glyphicons glyphicons-moon"></i>
+                                                                </div>
+                                                                <input type="text"
+                                                                       class="form-control wider"
+                                                                       ng-model="currentDiaries[date].sleep"
+                                                                       ng-blur="saveTableData(date)"
+                                                                       ng-disabled="diariesDisabledFields[date]['sleep']"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-12 field-column" ng-show="tableDisplayData">
+                                                        <div class="form-group form-group--">
+                                                            <div class="input-group">
+                                                                <div class="input-group-addon"><i
+                                                                        class="glyphicons glyphicons-scale"></i>
+                                                                </div>
+                                                                <input type="text"
+                                                                       class="form-control wider"
+                                                                       ng-model="currentDiaries[date].weight"
+                                                                       ng-blur="saveTableData(date)"
+                                                                       ng-disabled="diariesDisabledFields[date]['weight']"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <div class="col-md-12 field-column" ng-show="tableDisplayFood">
+                                                        <div class="form-group form-group--">
+                                                            <select class="form-control wider"
+                                                                    ng-model="currentDiaries[date].meal_flag"
+                                                                    ng-change="saveTableData(date)"
+                                                                    ng-disabled="diariesDisabledFields[date]['meal_flags']"
+                                                            >
+                                                                <option value="">Оцифровка</option>
+                                                                <option value="na">Нет данных</option>
+                                                                <option value="ooc">Вне концепции</option>
+                                                                <option value="mono">Монотонный</option>
+                                                                <option value="unload">Разгрузочный</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-12 field-column" ng-show="tableDisplayFood">
+                                                        <div class="form-group form-group--">
+                                                            <div class="input-group">
+                                                                <div class="input-group-addon"><i
+                                                                        class="glyphicons glyphicons-dining-set"></i>
+                                                                </div>
+                                                                <input type="text"
+                                                                       class="form-control wider"
+                                                                       ng-model="currentDiaries[date].meals"
+                                                                       ng-blur="saveTableData(date)"
+                                                                       ng-disabled="currentDiaries[date].meal_flag || diariesDisabledFields[date]['meal_flags'] || diariesDisabledFields[date]['meals']"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-12 field-column" ng-show="tableDisplayFood">
+                                                        <div class="form-group form-group--">
+                                                            <div class="input-group">
+                                                                <div class="input-group-addon"><i
+                                                                        class="glyphicons glyphicons-warning-sign"></i>
+                                                                </div>
+                                                                <input type="text"
+                                                                       class="form-control wider"
+                                                                       ng-model="currentDiaries[date].faults"
+                                                                       ng-blur="saveTableData(date)"
+                                                                       ng-disabled="currentDiaries[date].meal_flag || diariesDisabledFields[date]['meal_flags'] || diariesDisabledFields[date]['faults']"
+                                                                />
+                                                                <div class="input-group-addon danger">
+                                                                    <input type="checkbox"
+                                                                           title="Дополнительные продукты"
+                                                                           ng-model="currentDiaries[date].is_overcalory"
+                                                                           ng-change="saveTableData(date)"
+                                                                           ng-disabled="currentDiaries[date].meal_flag || diariesDisabledFields[date]['meal_flags'] || diariesDisabledFields[date]['is_overcalory']"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-12 field-column" ng-show="tableDisplayFood">
+                                                        <div class="form-group form-group--">
+                                <textarea class="form-control" placeholder="Комментарий"
+                                          rows="2"
+                                          ng-model="currentDiaries[date].comment"
+                                          ng-blur="saveTableData(date)"
+                                          ng-disabled="diariesDisabledFields[date]['comment']"
+                                ></textarea>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}
+
+{% block js_block %}
+
+{% endblock %}

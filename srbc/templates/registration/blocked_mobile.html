@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load bootstrap %}
+{% load static %}
+
+{% block title %}Аккаунт неактивен{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        {% if not user.profile.wave %}
+            {% include "blocks/progress_bar.html" %}
+        {% endif %}
+        <div class="login-box">
+            <h2 class="login-logo">
+                #SelfRebootCamp - условия тарифа
+            </h2>
+                <h4>
+                    По условиям тарифа вы можете использовать только мобильное приложение
+                </h4>
+                <div class="col-xs-12">
+                    <h6>
+                        Если вы считатете, что произошла ошибка, пожалуйста, напишите нам в  <a href="https://t.me/srbc_support_bot" target="_blank">техподдержку</a>.
+                        В сообщении обязательно укажите свой идентификатор участника проекта: <b>ID:{{ user.id }}</b>
+                    </h6>
+                </div>
+        </div>
+    </div>
+{% endblock %}

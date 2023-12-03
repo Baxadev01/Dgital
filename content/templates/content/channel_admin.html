@@ -1,0 +1,504 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+
+
+{% block title %}
+    Канал v3.0
+{% endblock %}
+{% block navbar_bottom %}{% endblock %}
+{% block css_block %}
+    <link href="{% static 'css/channel_admin.min.css' %}?v=20180121190918" rel="stylesheet"/>
+
+    <script type="text/javascript" src="{% static 'js/moment.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-animate.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-sanitize.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-touch.min.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'js/showdown.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-markdown.min.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'js/angular/ui-bootstrap.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'apps/channel_admin/app.module.min.js' %}?v=2020123112"></script>
+    <script type="text/javascript" src="{% static 'apps/shared/stopclick/stopclickDirective.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ng-sticky.min.js' %}"></script>
+    <script type="text/javascript">
+        var DEFAULT_MSG_TYPE_FILTER = '{{ default_message_type }}';
+    </script>
+    <style>
+        #messages-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            z-index: 11;
+            background: gray;
+            opacity: 0.5;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid app-container ng-cloak" ng-app="srbcApp" ng-controller="RootCtrl">
+        <div ng-include="'{% static 'apps/shared/topmenu/alerts.html' %}'"></div>
+        <div class="row">
+            <div class="col-md-6 col-xs-12 pull-right" style="margin-bottom: 1em">
+                <!-- Nav tabs -->
+                <uib-tabset active="active_post_tab" style="position: relative;">
+                    <uib-tab index="0">
+                        <uib-tab-heading>
+                            <i class="glyphicons glyphicons-message-new"></i> Новая публикация
+                        </uib-tab-heading>
+                        <div>
+                            <div class="form-group">
+                            <textarea class="form-control" ng-model="new_post.text" rows="10"
+                                      ng-change="savePostDraft()"
+                                      placeholder="Текст для отправки"></textarea>
+                                <span>Длина сообщения: {$ new_post.text.length $}</span>
+                                <div class="input-group input-group-sm">
+                                <span class="input-group-addon">
+                                    <i class="glyphicons glyphicons-picture"></i>
+                                </span>
+                                    <input class="form-control" ng-model="new_post.image_url"/>
+                                </div>
+                                <label for="post_additional_recipients">Дополнительные адресаты:</label>
+                                <textarea class="form-control" ng-model="new_post.additional_recipients" rows="2"
+                                          ng-list="," ng-trim="true" id="post_additional_recipients"
+                                          placeholder="Список ников для уведомления"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <div class="row">
+                                    <div class="col-sm-6" style="margin-bottom: 8px;">
+                                        <select ng-model="new_post.is_private" class="form-control"
+                                                ng-options="o.v as o.n for o in [{ n: 'Приватный', v: true }, { n: 'Публичный', v: false }]"
+                                        >
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-3 col-xs-6">
+                                        <button class="btn btn-info" ng-click="show_post_preview = !show_post_preview">
+                                            <i class="glyphicons glyphicons-glasses"></i> Предпросмотр
+                                        </button>
+                                    </div>
+                                    <div class="col-sm-3 col-xs-6">
+                                        <button class="btn btn-success pull-right"
+                                                ng-click="respondWithNew()"
+                                                value="reply_with_new">
+                                            <i class="glyphicons glyphicons-send"></i> Опубликовать
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="well" ng-if="show_post_preview">
+                                <strong>Предварительный просмотр:</strong>
+                                <div btf-markdown="new_post.text"></div>
+                            </div>
+
+                            <div>
+                                <div class="input-group">
+                                    <div class="input-group-btn">
+                                        <label class="btn btn-danger"
+                                               ng-model="posts_filter.is_private"
+                                               uib-btn-radio="true"
+                                               ng-change="loadRecentPosts()"
+                                        >
+                                            <i class="glyphicons glyphicons-lock"></i>
+                                        </label>
+                                        <label class="btn btn-success"
+                                               ng-model="posts_filter.is_private"
+                                               uib-btn-radio="false"
+                                               ng-change="loadRecentPosts()"
+                                        >
+                                            <i class="glyphicons glyphicons-unlock"></i>
+                                        </label>
+                                    </div>
+                                    <input class="form-control" ng-model="$parent.$parent.posts_filter_text"
+                                           ng-change="recentPostsSearchContext()"
+                                           placeholder="Поиск по сообщениям"/>
+                                    <div class="input-group-btn">
+                                        <button class="btn btn-default" ng-click="recent_posts_show=false"
+                                                ng-show="recent_posts_show">
+                                            Скрыть
+                                        </button>
+                                        <button class="btn btn-default" ng-click="recent_posts_show=true"
+                                                ng-show="!recent_posts_show">
+                                            Отобразить
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="panel tg_message" ng-repeat="post in recent_posts"
+                                     ng-class="{'panel-danger': post.is_private, 'panel-success': !post.is_private}"
+                                     ng-show="recent_posts_show">
+                                    <div class="panel-heading">
+                                        <div class="radio">
+                                            <label>
+                                                <strong>[{$ post.channel.code $}]</strong>
+                                                {$ post.author.username $}
+                                                @
+                                                {$ post.created_at|date:"yyyy-MM-dd HH:mm:ss Z" $}
+                                            </label>
+                                            <div class="pull-right" style="margin-top: -6px;">
+                                                <button class="btn btn-default btn-sm"
+                                                        ng-click="copyPostToForm(post);">
+                                                    <i class="glyphicons glyphicons-copy"></i> Скопировать
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="panel-body" btf-markdown="post.text"></div>
+                                    <div class="panel-footer" ng-if="post.image_url">
+                                        <div class="pull-right">
+                                            <i class="glyphicons glyphicons-picture" style="font-size: 24px;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </uib-tab>
+                    <uib-tab index="1">
+                        <uib-tab-heading>
+                            <i class="glyphicons glyphicons-history"></i> Недавние публикации
+                        </uib-tab-heading>
+
+                        <div>
+                            <div>
+                                <label for="old_post_additional_recipients">Дополнительные адресаты:</label>
+                                <textarea class="form-control" ng-model="new_post.additional_recipients" rows="2"
+                                          ng-list="," ng-trim="true" id="old_post_additional_recipients"
+                                          placeholder="Список ников для уведомления"></textarea>
+
+                            </div>
+                            <div class="input-group">
+                                <div class="input-group-btn">
+                                    <label class="btn btn-danger"
+                                           ng-model="posts_filter.is_private"
+                                           uib-btn-radio="true"
+                                           ng-change="loadPosts()"
+                                    >
+                                        <i class="glyphicons glyphicons-lock"></i>
+                                    </label>
+                                    <label class="btn btn-success"
+                                           ng-model="posts_filter.is_private"
+                                           uib-btn-radio="false"
+                                           ng-change="loadPosts()"
+                                    >
+                                        <i class="glyphicons glyphicons-unlock"></i>
+                                    </label>
+                                </div>
+                                <input class="form-control" ng-model="$parent.$parent.posts_filter_text"
+                                       ng-change="postsSearchContext()"
+                                       placeholder="Поиск по сообщениям"/>
+                                <div class="input-group-btn">
+                                    <button class="btn btn-primary pull-right"
+                                            ng-click="respondWithExisting()"
+                                            ng-disabled="!$parent.$parent.selected_post">
+                                        <i class="glyphicons glyphicons-message-plus"></i> Сохранить как ответ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="panel tg_message" ng-repeat="post in posts"
+                             ng-class="{'panel-danger': post.is_private, 'panel-success': !post.is_private}">
+                            <div class="panel-heading">
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="reply_with"
+                                               ng-model="$parent.$parent.$parent.selected_post"
+                                               ng-value="post"
+                                        />
+                                        {$ post.author.username $}
+                                        @
+                                        {$ post.created_at|date:"yyyy-MM-dd HH:mm:ss Z" $}
+                                    </label>
+                                    <div class="pull-right">
+                                        <i class="glyphicons glyphicons-lock message-icon"
+                                           ng-if="post.is_private"
+                                           title="Приватное"
+                                        ></i>
+                                        <i class="glyphicons glyphicons-unlock message-icon"
+                                           title="Общее"
+                                           ng-if="!post.is_private"></i>
+                                        <i class="glyphicons glyphicons-eye-open message-icon"
+                                           title="Опубликовано в канале"
+                                           ng-if="post.is_posted"></i>
+                                        <i class="glyphicons glyphicons-eye-close message-icon"
+                                           title="Не опубликовано в канале"
+                                           ng-if="!post.is_posted"></i>
+                                    </div>
+
+                                </div>
+                            </div>
+                            <div class="panel-body" btf-markdown="post.text" ng-if="!post.is_edit">
+                            </div>
+                            <div class="panel-body" ng-if="post.is_edit">
+                                <textarea class="form-control" ng-model="post.dirty_text" rows="6"></textarea>
+                            </div>
+                            <div class="panel-footer">
+                                <button class="btn btn-default btn-xs" ng-if="!post.is_private && !post.is_edit"
+                                        ng-click="editPost(post)">
+                                    <i class="glyphicons glyphicons-edit"></i> Исправить
+                                </button>
+                                <button class="btn btn-success btn-xs" ng-if="!post.is_private && post.is_edit"
+                                        ng-click="updatePost(post)">
+                                    <i class="glyphicons glyphicons-floppy-disk"></i> Сохранить
+                                </button>
+                                <button class="btn btn-default btn-xs" ng-if="!post.is_private && post.is_edit"
+                                        ng-click="resetPost(post)">
+                                    <i class="glyphicons glyphicons-undo"></i> Отменить
+                                </button>
+                                <span class="pull-right" ng-if="post.image_url">
+                                    <i class="glyphicons glyphicons-picture" style="font-size: 24px;"></i>
+                                </span>
+
+                            </div>
+                        </div>
+                    </uib-tab>
+                    <div class="btn-group" uib-dropdown style="right: 0; top: 4px; position: absolute;">
+                        <button type="button" id="channel-selector" class="btn btn-default" uib-dropdown-toggle>
+                            Канал {$ $root.channel.code $} <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="channel-selector">
+                            <li role="menuitem" ng-repeat="channel in channels" ng-click="setActiveChannel(channel)">
+                                <a href="#">{$ channel.code $}</a>
+                            </li>
+                        </ul>
+                    </div>
+                </uib-tabset>
+                <!-- Tab panes -->
+            </div>
+            <div class="col-md-6 col-xs-12 pull-left">
+                <div class="panel panel-primary" style="position: relative">
+                    <div id="messages-overlay" ng-if="$root.is_messages_loading"></div>
+                    <div class="panel-heading">
+                        <div class="btn-group" uib-dropdown>
+                            <button id="msg-status-btn" type="button" class="btn btn-primary"
+                                    uib-dropdown-toggle>
+                                {$ getMessagesGlobalFilterStatusText() $} <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu" uib-dropdown-menu role="menu"
+                                aria-labelledby="msg-status-btn">
+                                <li role="menuitem">
+                                    <a class="pointer" ng-click="setMessageStatusFilter('NEW')">Неотвеченные</a>
+                                </li>
+                                <li role="menuitem">
+                                    <a class="pointer" ng-click="setMessageStatusFilter('ANSWERED')">Отвеченные</a>
+                                </li>
+                                <li role="menuitem">
+                                    <a class="pointer" ng-click="setMessageStatusFilter('CANCELED')">Пропущенные</a>
+                                </li>
+                                <li role="menuitem">
+                                    <a class="pointer" ng-click="setMessageStatusFilter('REJECTED')">Отклоненные</a>
+                                </li>
+                                <li role="menuitem">
+                                    <a class="pointer" ng-click="setMessageStatusFilter('POSTPONED')">Отложенные</a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <span class="pull-right message-icon">
+                        <span class="pointer" ng-click="resetMessagesGlobalFilter()"><i
+                                class="glyphicons glyphicons-cleaning"
+                                title="Сбросить фильтры"></i></span>
+                        <span class="pointer" ng-click="loadUsersMessages()"><i
+                                class="glyphicons glyphicons-refresh"
+                                title="Обновить"></i></span>
+                        </span>
+                    </div>
+                    <div class="panel-footer">
+                        <div class="input-group">
+                            <div class="input-group-btn">
+                                <label class="btn btn-warning msg-type-filter"
+                                       ng-model="messages_filter.message_type"
+                                       uib-btn-radio="'QUESTION'"
+                                       ng-click="setMessageTypeFilter('QUESTION')"
+                                >
+                                    <i class="glyphicons glyphicons-question-sign"></i>
+                                </label>
+                                <label class="btn btn-info msg-type-filter"
+                                       ng-model="messages_filter.message_type"
+                                       uib-btn-radio="'FEEDBACK'"
+                                       ng-click="setMessageTypeFilter('FEEDBACK')"
+                                >
+                                    <i class="glyphicons glyphicons-exclamation-sign"></i>
+                                </label>
+                                <label class="btn btn-default msg-type-filter"
+                                       ng-model="messages_filter.message_type"
+                                       uib-btn-radio="'MEAL'"
+                                       ng-click="setMessageTypeFilter('MEAL')"
+                                >
+                                    <i class="glyphicons glyphicons-dining-set"></i>
+                                </label>
+                                <label class="btn btn-danger msg-type-filter"
+                                       ng-model="messages_filter.message_type"
+                                       uib-btn-radio="'FORMULA'"
+                                       ng-click="setMessageTypeFilter('FORMULA')"
+                                >
+                                    <i class="glyphicons glyphicons-life-preserver"></i>
+                                </label>
+                            </div>
+                            <input class="form-control" ng-model="messages_filter.text"
+                                   placeholder="Поиск по сообщениям"/>
+                        </div>
+                    </div>
+                    <div class="panel-body tg_messages" ng-hide="messages.length == 0">
+                        <div class="panel tg_message"
+                             ng-repeat="message in messages |filter:messages_filter"
+                             ng-class="{'panel-warning': message.message_type == 'QUESTION', 'panel-info': message.message_type == 'FEEDBACK', 'panel-default': message.message_type == 'MEAL', 'panel-danger': message.message_type == 'FORMULA'}"
+                        >
+                            <div class="panel-heading">
+                                <div class="checkbox">
+                                    <label>
+                                        <input type="checkbox" name="reply-to" ng-model="message.is_selected"/>
+                                        <span uib-dropdown>
+                                          <a href uib-dropdown-toggle>
+                                              [{$ message.author.profile.wave.title $}]
+                                              {$ message.author.first_name $}
+                                              {$ message.author.last_name $}<span class="ig_hidden"> (https://lk.selfreboot.camp/profile/{$ message.author.username $}/)</span></a>
+                                          <ul class="dropdown-menu" uib-dropdown-menu>
+                                            <li role="menuitem">
+                                              <a ng-href="/profile/{$ message.author.username $}/"
+                                                 target="_blank">
+                                                  <i class="glyphicons glyphicons-user"></i> {$ message.author.username $}</a>
+                                            </li>
+                                            <li role="menuitem">
+                                              <a ng-href="https://instagram.com/{$ message.author.profile.instagram $}/"
+                                                 target="_blank">
+                                                  <i class="social social-instagram"></i> {$ message.author.profile.instagram $}</a>
+                                            </li>
+                                              <li class="divider"></li>
+                                            <li role="menuitem">
+                                              <a href ng-click="setMessageAuthorFilter(message.author.id)">
+                                                  <i class="glyphicons glyphicons-chat"></i> Все сообщения
+                                              </a>
+                                            </li>
+                                            <li role="menuitem">
+                                              <a ng-href="/profile/{$ message.author.username $}/"
+                                                 target="_blank">
+                                                  <i class="glyphicons glyphicons-charts"></i> Статистика</a>
+                                            </li>
+                                          </ul>
+                                        </span>
+                                        @ {$ message.created_at|date:"yyyy-MM-dd HH:mm:ss" $}
+                                    </label>
+                                    <button class="btn btn-xs btn-default" ng-click="prependQuote(message)">
+                                        <i class="glyphicons glyphicons-chevron-right"></i>
+                                    </button>
+                                    <div class="message-icon pull-right">
+                                        <span uib-dropdown>
+                                            <a href uib-dropdown-toggle>
+                                        <span class="pointer label label-primary" ng-if="message.status=='NEW'">
+                                            Новый
+                                        </span>
+                                        <span class="pointer label label-default" ng-if="message.status=='ANSWERED'">
+                                            Отвеченный
+                                        </span>
+                                        <span class="pointer label label-danger" ng-if="message.status=='REJECTED'">
+                                            Отклонённый
+                                        </span>
+                                        <span class="pointer label label-info" ng-if="message.status=='POSTPONED'">
+                                            Отложенный
+                                        </span>
+                                        <span class="pointer label label-warning" ng-if="message.status=='CANCELED'">
+                                            Пропущенный
+                                        </span>
+                                            </a>
+                                          <ul class="dropdown-menu" uib-dropdown-menu>
+                                            <li role="menuitem"
+                                                ng-show="message.status!=='NEW'"
+                                                ng-click="setMessageStatus(message, 'NEW')"
+                                            >
+                                                <span style="margin-left: 0"
+                                                      class="pointer btn btn-primary btn-xs btn-block">Новый</span>
+                                            </li>
+                                            <li role="menuitem"
+                                                ng-show="message.status!=='CANCELED'"
+                                                ng-click="setMessageStatus(message, 'CANCELED')"
+                                            >
+                                                <span style="margin-left: 0"
+                                                      class="pointer btn btn-warning btn-xs btn-block">Пропущенный</span>
+                                            </li>
+                                            <li role="menuitem"
+                                                ng-show="message.status!=='REJECTED'"
+                                                ng-click="setMessageStatus(message, 'REJECTED')"
+                                            >
+                                                <span style="margin-left: 0"
+                                                      class="pointer btn btn-danger btn-xs btn-block">Отклоненный</span>
+                                            </li>
+                                            <li role="menuitem"
+                                                ng-show="message.status!=='POSTPONED'"
+                                                ng-click="setMessageStatus(message, 'POSTPONED')"
+                                            >
+                                                <span style="margin-left: 0"
+                                                      class="pointer btn btn-info btn-xs btn-block">Отложенный</span>
+                                            </li>
+                                          </ul>
+                                        </span>
+
+                                        <span uib-dropdown>
+                                            <a href uib-dropdown-toggle>
+                                        <span ng-if="message.message_type == 'QUESTION'">
+                                            <i class="glyphicons glyphicons-question-sign"></i> Вопрос
+                                        </span>
+                                        <span ng-if="message.message_type == 'FEEDBACK'">
+                                            <i class="glyphicons glyphicons-exclamation-sign"></i> Отзыв
+                                        </span>
+                                        <span ng-if="message.message_type == 'MEAL'">
+                                            <i class="glyphicons glyphicons-dining-set"></i> Рацион
+                                        </span>
+                                        <span ng-if="message.message_type == 'FORMULA'">
+                                            <i class="glyphicons glyphicons-life-preserver"></i> Формула
+                                        </span>
+                                            </a>
+                                          <ul class="dropdown-menu" uib-dropdown-menu>
+                                            <li role="menuitem"
+                                                ng-show="message.message_type!=='QUESTION'"
+                                                ng-click="setMessageType(message, 'QUESTION')"
+                                            >
+                                                <span style="margin-left: 0"
+                                                      class="pointer btn btn-warning btn-xs btn-block">Вопрос</span>
+                                            </li>
+                                            <li role="menuitem"
+                                                ng-show="message.message_type!=='FEEDBACK'"
+                                                ng-click="setMessageType(message, 'FEEDBACK')"
+                                            >
+                                                <span style="margin-left: 0"
+                                                      class="pointer btn btn-info btn-xs btn-block">Отзыв</span>
+                                            </li>
+                                            <li role="menuitem"
+                                                ng-show="message.message_type!=='MEAL'"
+                                                ng-click="setMessageType(message, 'MEAL')"
+                                            >
+                                                <span style="margin-left: 0"
+                                                      class="pointer btn btn-default btn-xs btn-block">Рацион</span>
+                                            </li>
+                                            <li role="menuitem"
+                                                ng-show="message.message_type!=='FORMULA'"
+                                                ng-click="setMessageType(message, 'FORMULA')"
+                                            >
+                                                <span style="margin-left: 0"
+                                                      class="pointer btn btn-danger btn-xs btn-block">Формула</span>
+                                            </li>
+                                          </ul>
+                                        </span>
+                                    </div>
+
+                                </div>
+                            </div>
+                            <div class="panel-body">{$ message.text $}</div>
+                            <div class="panel-footer reply-for-message" ng-if="message.answer">
+                                <div class="pull-left" style="margin-left: -40px;" ng-if="message.answer.image_url">
+                                    <i class="glyphicons glyphicons-picture h2"></i>
+                                </div>
+                                <div btf-markdown="message.answer.text"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}

@@ -1,0 +1,509 @@
+{% extends "srbc/base.html" %}
+{% load static %}
+
+
+{% block title %}Рацион{% endblock %}
+{% block navbar_bottom %}{% endblock %}
+{% block css_block %}
+    <!-- @formatter:off -->
+    {{ profile_serialized|json_script:"data-profile-serialized" }}
+    {{ notice_templates|json_script:"data-notice-templates" }}
+    {{ possible_faults_list|json_script:"data-possible-faults-list" }}
+
+    <script>
+        var SRBC_USER = JSON.parse(document.getElementById('data-profile-serialized').textContent);
+        var TODAY = '{{ today|date:"Y-m-d" }}';
+        var REMAINING = {{ meals_left }};
+        var NOTICE_TEMPLATES = JSON.parse(document.getElementById('data-notice-templates').textContent);
+        var POSSIBLE_FAULTS = JSON.parse(document.getElementById('data-possible-faults-list').textContent); 
+    </script>
+    <style type="text/css">
+        .json-preview {
+            outline: 1px solid #ccc;
+            padding: 5px;
+            font-size: 10px;
+        }
+
+        .json-preview .string {
+            color: green;
+        }
+
+        .json-preview .number {
+            color: darkorange;
+        }
+
+        .json-preview .boolean {
+            color: blue;
+        }
+
+        .json-preview .null {
+            color: magenta;
+        }
+
+        .json-preview .key {
+            color: red;
+        }
+    </style>
+
+    <link href="{% static 'css/diary_form_meals.min.css' %}?v=2020102101" rel="stylesheet"/>
+    <script type="text/javascript" src="{% static 'js/moment.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery-3.2.1.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/jquery-ui.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-animate.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-sanitize.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/angular-touch.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ui-bootstrap.js' %}"></script>
+
+    <script type="text/javascript"
+            src="{% static 'apps/admin_stream_meals/app.module.min.js' %}?v=2021121715"></script>
+    <script type="text/javascript"
+            src="{% static 'apps/shared/admin_meal/adminMealDirective.min.js' %}?v=2021102014"></script>
+    <script type="text/javascript"
+            src="{% static 'apps/shared/meal_datetime/mealDateTimeDirective.min.js' %}?v=2020102101"></script>
+
+    <script type="text/javascript" src="{% static 'apps/shared/stopclick/stopclickDirective.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/angular/ng-sticky.min.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    <!-- Page Content -->
+    <div class="container-fluid app-container ng-cloak" ng-app="srbcApp" ng-controller="RootCtrl">
+        <div ng-include="'{% static 'apps/shared/topmenu/alerts.html' %}'"></div>   
+        <div class="row">
+            <div class="col-md-8">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <div class="form-group form-group-lg has-feedback"
+                                     ng-class="{'has-warning': meal_validated && validation_date_warning, 'has-success': meal_validated && !validation_date_warning, 'has-error': !meal_validated}"
+                                >
+                                    <div class="input-group">
+                                        <input class="form-control text-center" readonly
+                                               ng-value="meal_title"
+                                               id="collage-date"
+                                               style="font-weight: bold;"/>
+                                        <span class="form-control-feedback" style="right: 60px; width: 100px"
+                                              title="Дата отправки рациона на анализ">
+                                    <i class="glyphicons"
+                                       ng-class="{'glyphicons-warning-sign': meal_validated && validation_date_warning, 'glyphicons-check': meal_validated && !validation_date_warning, 'glyphicons-remove': !meal_validated}"
+                                    ></i>
+                                    <span ng-if="meal_validated">&nbsp;{$ day_data.validation_date $}</span>
+                                    <span ng-if="!meal_validated">&nbsp;Н/Д</span>
+
+                                </span>
+                                        <div class="input-group-btn">
+                                            <a class="btn btn-lg btn-primary" ng-click="goNextMeal()">
+                                                <i class="glyphicons glyphicons-arrow-right"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row"
+                             style="padding-top: 8px; padding-bottom: 8px; background-color: #fff; margin-bottom: 8px;"
+                             ng-class="{'bg-danger': day_data.faults_data.length}"
+                             sticky offset="50"
+                        >
+                            <div class="col-xs-12">
+                                <div class="row">
+                                    <div class="col-xs-4 col-sm-3 col-lg-3" ng-show="!$root.is_fake">
+                                        <div class="btn-group">
+                                            <label class="btn btn-primary" ng-model="display_mode"
+                                                   uib-btn-radio="'short'"
+                                                   ng-click="setDisplayMode('short')">
+                                                <i class="glyphicons glyphicons-note"></i>
+                                            </label>
+                                            <label class="btn btn-primary" ng-model="display_mode"
+                                                   uib-btn-radio="'full'"
+                                                   ng-click="setDisplayMode('full')">
+                                                <i class="glyphicons glyphicons-table"></i>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-xs-8 col-sm-9 col-lg-9" ng-show="!$root.is_fake">
+                                        <button class="btn btn-primary btn-block" ng-click="saveReview()"
+                                                ng-disabled="!$root.is_ready || day_data.pers_rec_flag === 'NULL'">
+                                            <i class="glyphicons glyphicons-floppy-disk"></i> Сохранить
+                                        </button>
+                                    </div>
+
+                                    <div class="col-xs-12" ng-show="$root.is_fake">
+                                        <button class="btn btn-blame btn-block" ng-disabled="true">
+                                            <i class="glyphicons glyphicons-ban-circle"></i> Рацион с ошибками в
+                                            описании
+                                        </button>
+                                    </div>
+                                    <div class="col-xs-12" style="margin-top: 8px;">
+                                        <div class="input-group">
+                                            <div class="input-group-addon">
+                                                <i class="glyphicons glyphicons-dining-set"></i>
+                                            </div>
+                                            <input class="form-control" ng-model="day_data.meals"
+                                                   ng-disabled="!$root.is_ready || no_formula"/>
+                                            <div class="input-group-addon">
+                                                /
+                                            </div>
+                                            <input class="form-control" ng-model="$root.faults_list.length"
+                                                   ng-disabled="true"/>
+                                            <div class="input-group-addon">
+                                                <label>
+                                                    *
+                                                    <input type="checkbox" ng-model="day_data.is_overcalory"
+                                                           ng-value="true"
+                                                           ng-disabled="!$root.is_ready || no_overcalory"/>
+                                                </label>
+                                            </div>
+                                            <div class="input-group-btn" style="width: 16.666666666%">
+                                                <button class="btn btn-info col-xs-6"
+                                                        ng-click="$root.addNotice('day')"
+                                                        ng-disabled="!$root.is_ready || !$root.profile.is_meal_comments_allowed"
+                                                >
+                                                    <i class="glyphicons glyphicons-chat"></i>
+                                                </button>
+                                                <button class="btn btn-danger  col-xs-6"
+                                                        ng-click="$root.addFault('day')"
+                                                        ng-disabled="!$root.is_ready"
+                                                >
+                                                    <i class="glyphicons glyphicons-exclamation-sign"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12" style="margin-top: 8px;">
+                                        <label ng-class="{'has-error': day_data.pers_rec_flag === 'NULL', 'has-success': day_data.pers_rec_flag !== 'NULL'}">
+                                            <select class="form-control" ng-model="day_data.pers_rec_flag" id='pers_req_status' > 
+                                                <option value="NULL"></option>
+                                                <option value="NA">❓ Рацион не проверен на соответствие персональным
+                                                    рекомендациям (или таковые отсутствуют)
+                                                </option>
+                                                <option value="OK">✅ Рацион соответствует персональным рекомендациям
+                                                </option>
+                                                <option value="F">❌ Рацион НЕ соответствует персональным рекомендациям
+                                                </option>
+                                            </select>
+                                            <span class="help-block" ng-show="day_data.pers_rec_flag === 'NULL'">
+                                                <i class="glyphicon glyphicon-warning-sign"></i> Пожалуйста, выберите статус персональных рекомендаций.
+                                            </span>
+                                        </label>
+ 
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div id="pers_req_faults" style="margin: -15px 0px 15px 20px;" ng-show="day_data.pers_rec_flag === 'F'">
+                                <h4>Выберите нарушения рекомендаций</h4>
+                                {% for item in possible_faults_list %}
+                                    <div style="margin-left: 20px;">
+                                        <input type="checkbox" id='{{item.fault}}'> 
+                                        {{ item.title }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="row" id="meals_text" ng-show="display_mode=='short'">
+                            <pre class="meal-text-preview">{$ getIgText() $}</pre>
+                        </div>
+                        <div class="row" id="meals_container" ng-show="display_mode=='full'">
+                            <div class="col-xs-12">
+                                <div class="row">
+                                    <div class="col-xs-12">
+                                        <div class="panel"
+                                             ng-class="{'panel-success': wake_up_ok(), 'panel-danger': !wake_up_ok()}"
+                                             style="margin-bottom: 12px;">
+                                            <div class="panel-heading">
+                                                <div class="row">
+                                                    <div class="col-xs-5 column">
+                                                        <div class="input-group">
+                                                            <span class="input-group-addon"><i
+                                                                    class="glyphicons glyphicons-clock"></i></span>
+                                                            <meal-date-time
+                                                                    datetime="day_data.wakeup_time"></meal-date-time>
+                                                        </div>
+                                                    </div>
+                                                    <div class="panel-title col-xs-7 column meal-title">
+                                                        Подъём
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <meal ng-repeat="meal in meals" obj="meal"></meal>
+                                    <div class="col-xs-12">
+                                        <div class="panel"
+                                             ng-class="{'panel-success': gotobed_ok(), 'panel-danger': !gotobed_ok()}"
+                                             style="margin-bottom: 12px;">
+                                            <div class="panel-heading">
+                                                <div class="row">
+                                                    <div class="col-xs-5 column">
+                                                        <div class="input-group">
+                                                            <span class="input-group-addon"><i
+                                                                    class="glyphicons glyphicons-clock"></i></span>
+                                                            <meal-date-time datetime="day_data.bed_time"
+                                                                            aftermidnight=day_data.bed_time_is_next_day></meal-date-time>
+                                                        </div>
+                                                    </div>
+                                                    <div class="panel-title col-xs-7 column meal-title">
+                                                        Отбой
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12">
+                                        <div class="panel"
+                                             ng-class="{'panel-info': water_ok(), 'panel-warning': !water_ok()}"
+                                             style="margin-bottom: 12px;">
+                                            <div class="panel-heading">
+                                                <div class="row">
+                                                    <div class="col-xs-5 column">
+                                                        <div class="input-group">
+                                        <span class="input-group-addon"
+                                              style="font-size: x-large; overflow: hidden; margin-bottom: 0; padding: 0; padding-left: 6px; padding-right: 8px;">
+                                            🚰
+                                        </span>
+                                                            <input type="number" step="0.2"
+                                                                   class="form-control meal-time"
+                                                                   ng-model="day_data.water_consumed"
+                                                                   readonly
+                                                            />
+                                                            <span class="input-group-addon">л</span>
+
+                                                        </div>
+                                                    </div>
+                                                    <div class="panel-title col-xs-3 column meal-title">
+                                                        Вода
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <div class="panel panel-default" style="margin-bottom: 12px;">
+                                    <div class="panel-heading">
+                                        <div class="row">
+                                            <div class="col-sm-8 col-xs-12">
+                                                <div class="thumbnail" ng-if="meal_image.image">
+                                                    <img id="meal_image_preview" ng-src="{$ meal_image.image $}"
+                                                         height="200"/>
+                                                </div>
+                                            </div>
+                                            <div class="col-xs-4 panel-title column meal-title">Фото рациона</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-xs-12" ng-show="!$root.is_fake && $root.is_ready">
+                                <button class="btn btn-blame btn-block" ng-click="blameMeal()"
+                                        style="white-space: normal;">
+                                    <i class="glyphicons glyphicons-ban-circle"></i> Рацион с неверными данными
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 pers-rec-fixed">
+                <div class="row">
+                    <div class="panel panel-info" >
+                        <div class="panel-heading">
+                            <a href="/profile/!{$ $root.profile.user $}/" target="_blank">Профиль участника</a>
+                            <br>
+                            <span style="color:black">
+                                Тариф: {{ meal_tariff }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {% if perms.srbc.manage_diary_meal %}
+                    <div class="row">
+                        <div class="panel panel-info" ng-show="meal_reviewed_by">
+                            <div class="panel-heading">
+                                Рацион оцифровал
+                                <a href="/admin/auth/user/{$ meal_reviewed_by.id $}/change/" target="_blank">@{$
+                                    meal_reviewed_by.username $}</a>
+                                (id: <u>{$ meal_reviewed_by.id $}</u>, name: <u>{$ meal_reviewed_by.first_name $} {$
+                                meal_reviewed_by.last_name $}</u>)
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if note %}
+                    <div class="row">
+                        <div class="panel panel-success">
+                            <div class="panel-heading">
+                                <h5>Персональные рекомендации</h5>
+                                {% if note.has_meal_adjustments %}
+                                    <p>
+                                        {% if note.adjust_calories %}
+                                            Корректировка калорийности рациона:
+                                            {% if note.adjust_calories > 0 %}
+                                                +{% endif %}{{ note.adjust_calories|safe }}%
+                                            <br/>{% endif %}
+                                        {% if note.adjust_protein %}
+                                            Корректировка белка в рационе:
+                                            {% if note.adjust_protein > 0 %}
+                                                +{% endif %}{{ note.adjust_protein|safe }}%
+                                            <br/>{% endif %}
+                                        {% if note.add_fat %}Добавить жиров: Да<br/>{% endif %}
+                                        {% if note.adjust_fruits != 'NO' %}
+                                            Простые сахара: {{ note.get_adjust_fruits_display }}
+                                            <br/>{% endif %}
+                                        {% if note.adjust_carb_mix_vegs %}Смешивать овощи: Да<br/>{% endif %}
+                                        {% if note.adjust_carb_bread_min %}Уменьшение полисахаридов: Да<br/>{% endif %}
+                                        {% if note.adjust_carb_bread_late %}Убрать полисахариды из ужина: Да<br/>{% endif %}
+                                        {% if note.adjust_carb_carb_vegs %}Исключить запасающие овощи после обеда: Да
+                                            <br/>{% endif %}
+                                        {% if note.adjust_carb_sub_breakfast %}Замена длинных углеводов на овощи
+                                            (завтрак по
+                                            схеме обеда): Да<br/>{% endif %}
+                                        {% if note.exclude_lactose %}Исключить молочные сахара: Да<br/>{% endif %}
+                                        {% if note.restrict_lactose_casein %}Ограничить молочные сахара и казеин вторым
+                                            завтраком: Да{% endif %}
+                                    </p>
+                                {% else %}
+                                    <h5>отсутствуют</h5>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                <div class="row" style="margin-bottom: 8px;">
+                    <button
+                            class="btn btn-block btn-lg btn-pink h1"
+                            ng-click="parseMealFaults();" style="padding: 1em;">
+                        ХРУМ!
+                    </button>
+                </div>
+
+                <div class="row">
+                    <div id="day_faults_list" ng-show="$root.faults_list.length">
+                        <ul class="list-group">
+
+                            <li class="list-group-item active">
+                                Список жиронакопительных действий за день
+                            </li>
+                            <li style="position: relative"
+                                class="list-group-item meal-fault"
+                                ng-repeat="(key, fault) in $root.faults_list">
+                                <span class="label"
+                                      ng-class="{'label-danger': fault.fault.is_public, 'label-primary': !fault.fault.is_public}"
+                                >&nbsp;</span>&nbsp;
+                                {$ fault.fault.title $}<span ng-if="fault.fault.comment">: {$ fault.fault.comment $}</span>
+                                <span class="remove btn btn-xs btn-danger glyphicons glyphicons-bin"
+                                      ng-click="$root.deleteFault(key)"></span>
+                            </li>
+                        </ul>
+                    </div>
+
+                </div>
+                <div ng-if="containers" class="row">
+                    <div class="row border-bottom m-1" ng-repeat="(key, plast) in containers">
+                        <div class="col-md-3 container-meal-title">
+                            <div>{$ $root.mealTypesDict[key] $}</div>
+                            <div><span class="label label-primary" ng-if="plast.MEALS.length"
+                                       ng-repeat="time in plast.MEALS">{$ time $}</span></div>
+                            <div><span class="label label-danger" ng-if="!plast.MEALS.length">--:--</span></div>
+                        </div>
+                        <div class="col-md-9  border-left">
+                            <div class="row font-weight-bold border-bottom m-1">
+                                <div class="col-20 container-title">
+                                    <i class="fas fa-egg" uib-tooltip="Белок" tooltip-append-to-body="true"></i>
+                                </div>
+                                <div class="col-20 container-title">
+                                    <i class="fas fa-leaf" uib-tooltip="Клетчатка" tooltip-append-to-body="true"></i>
+                                </div>
+                                <div class="col-20 container-title">
+                                    <i class="fas fa-pastafarianism" uib-tooltip="Крахмал"
+                                       tooltip-append-to-body="true"></i>
+                                </div>
+                                <div class="col-20 container-title">
+                                    <i class="fas fa-oil-can" uib-tooltip="Жиры" tooltip-append-to-body="true"></i>
+                                </div>
+                                <div class="col-20 container-title">
+                                    <i class="fas fa-candy-cane" uib-tooltip="Глюкоза"
+                                       tooltip-append-to-body="true"></i>
+                                </div>
+                            </div>
+                            <div class="row m-1">
+                                <div class="col-20 col-md-2 container-value">
+                                    <div>
+                                        <span>{$ plast.PROTEIN.amount|number:1 $}</span>
+                                        <span ng-if="plast.PROTEIN.required">&nbsp;<i class="fas"
+                                                                                      ng-class="plast_icon(plast.PROTEIN)"></i></span>
+                                        <span ng-if="!plast.PROTEIN.required && plast.PROTEIN.amount">&nbsp;<i
+                                                class="fas fa-times-circle text-danger"></i></span>
+                                    </div>
+                                    <div ng-if="plast.PROTEIN.required">
+                                        <span class="label" ng-class="container_fill_class(plast.PROTEIN)">
+                                            {$ container_fill_percent(plast.PROTEIN) $}%
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-20 container-value">
+                                    <div>
+                                        <span>{$ plast.FIBER.amount|number:1 $}</span>
+                                        <span ng-if="plast.FIBER.required">&nbsp;<i class="fas"
+                                                                                    ng-class="plast_icon(plast.FIBER)"></i></span>
+                                        <span ng-if="!plast.FIBER.required && plast.FIBER.amount">&nbsp;<i
+                                                class="fas fa-times-circle text-danger"></i></span>
+                                    </div>
+                                    <div ng-if="plast.FIBER.required">
+                                        <span class="label" ng-class="container_fill_class(plast.FIBER)">
+                                            {$ container_fill_percent(plast.FIBER) $}%
+                                        </span>
+                                    </div>
+
+                                </div>
+                                <div class="col-20 container-value">
+                                    <div>
+                                        <span>{$ plast.STARCH.amount|number:1 $}</span>
+                                        <span ng-if="plast.STARCH.required">&nbsp;<i class="fas"
+                                                                                     ng-class="plast_icon(plast.STARCH)"></i></span>
+                                        <span ng-if="!plast.STARCH.required && plast.STARCH.amount">&nbsp;<i
+                                                class="fas fa-times-circle text-danger"></i></span>
+                                    </div>
+                                    <div ng-if="plast.STARCH.required">
+                                        <span class="label" ng-class="container_fill_class(plast.STARCH)">
+                                            {$ container_fill_percent(plast.STARCH) $}%
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-20 container-value">
+                                    <div>
+                                        {$ plast.FAT.amount|number:1 $}
+                                        <span ng-if="plast.FAT.required"></span>
+                                    </div>
+                                </div>
+                                <div class="col-20 container-value">
+                                    <div>
+                                        {$ plast.GLUCOSE.amount|number:1 $}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row border-top m-1" ng-if="plast.EXTRA.components.length">
+                                <strong>Дополнительные продукты:</strong>
+                                <div ng-repeat="f in plast.EXTRA.components">{$ f $}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <!-- /.container -->
+{% endblock %}

@@ -1,0 +1,159 @@
+{% load bootstrap3 %}
+{% load static %}
+{% load i18n %}
+
+<!DOCTYPE html>
+<html lang="en-150">
+
+<head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="{% static 'icons/apple-touch-icon-57x57.png' %}"/>
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="{% static 'icons/apple-touch-icon-114x114.png' %}"/>
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="{% static 'icons/apple-touch-icon-72x72.png' %}"/>
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="{% static 'icons/apple-touch-icon-144x144.png' %}"/>
+    <link rel="apple-touch-icon-precomposed" sizes="60x60" href="{% static 'icons/apple-touch-icon-60x60.png' %}"/>
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="{% static 'icons/apple-touch-icon-120x120.png' %}"/>
+    <link rel="apple-touch-icon-precomposed" sizes="76x76" href="{% static 'icons/apple-touch-icon-76x76.png' %}"/>
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="{% static 'icons/apple-touch-icon-152x152.png' %}"/>
+    <link rel="icon" type="image/png" href="{% static 'icons/favicon-196x196.png' %}" sizes="196x196"/>
+    <link rel="icon" type="image/png" href="{% static 'icons/favicon-96x96.png' %}" sizes="96x96"/>
+    <link rel="icon" type="image/png" href="{% static 'icons/favicon-32x32.png' %}" sizes="32x32"/>
+    <link rel="icon" type="image/png" href="{% static 'icons/favicon-16x16.png' %}" sizes="16x16"/>
+    <link rel="icon" type="image/png" href="{% static 'icons/favicon-128.png' %}" sizes="128x128"/>
+    <meta name="application-name" content=“SelfRebootCamp”/>
+    <meta name="msapplication-TileColor" content="#FFFFFF"/>
+    <meta name="msapplication-TileImage" content="{% static 'icons/mstile-144x144.png' %}"/>
+    <meta name="msapplication-square70x70logo" content="{% static 'icons/mstile-70x70.png' %}"/>
+    <meta name="msapplication-square150x150logo" content="{% static 'icons/mstile-150x150.png' %}"/>
+    <meta name="msapplication-wide310x150logo" content="{% static 'icons/mstile-310x150.png' %}"/>
+    <meta name="msapplication-square310x310logo" content="{% static 'icons/mstile-310x310.png' %}"/>
+
+
+    <title>{% block title %}{% endblock %} – #SelfRebootCamp</title>
+
+    <!-- Bootstrap Core CSS -->
+    {% bootstrap_css %}
+
+    <!-- Custom CSS -->
+    <link href="{% static 'css/wifit.min.css' %}?v=2020071601" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Days+One" rel="stylesheet">
+    <link href="{% static 'css/glyphicons.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/glyphicons-social.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/font-awesome.min.css' %}?v=2020071601" rel="stylesheet">
+    <link href="{% static 'css/bootstrap-social.css' %}" rel="stylesheet">
+    <link href="{% static 'css/jquery-ui.min.css' %}" rel="stylesheet"/>
+    {% block css_block %}{% endblock %}
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+
+{% bootstrap_messages %}
+<!-- Navigation -->
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse"
+                    data-target="#navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">#SelfRebootCamp</a>
+        </div>
+        <div class="collapse navbar-collapse" style="max-height:540px" id="navbar-collapse">
+            {% block topmenu %}
+                {% include "blocks/top_menu.html" %}
+            {% endblock %}
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+{% block navbar_bottom %}
+    <nav class="navbar navbar-inverse navbar-fixed-bottom hidden-xs" role="navigation">
+        <div class="container-full">
+            <ul class="nav navbar-nav pull-right">
+                <li>
+                    <a href="/articles/about/">О проекте</a>
+                </li>
+                <li>
+                    <a href="/ask/">Задать вопрос</a>
+                </li>
+                {#                <li>#}
+                {#                    <a href="/contacts/">Контакты</a>#}
+                {#                </li>#}
+                <li>
+                    <a href="/privacy/">Политика конфиденциальности</a>
+                </li>
+                <li>
+                    <a href="/tos/">Условия участия</a>
+                </li>
+            </ul>
+        </div>
+        <!-- /.container -->
+    </nav>
+{% endblock %}
+{% if user.is_authenticated %}
+    <div class="container-fluid">
+        <div class="modal fade" id="mobile_auth" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Закрыть">
+                            <span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="mealRulesLabel">Авторизация в приложении</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div id="desktop_block" style="display:none;">
+                            <h3>QR-код для входа</h3>
+                            <p>Для входа в мобильное приложение отсканируйте этот QR-код:</p>
+                            <div id="qrcode" style="width: 100%"></div>
+                        </div>
+                        <div id="mobile_block" style="display: none;">
+                            <button class="btn btn-info center-block btn-mobile-auth">
+                                Авторизовать мобильное приложение<br/>на этом устройстве
+                            </button>
+                        </div>
+                        <div id="is_loading" class="my-5 py-5" style="display: none;">
+                            <img src="{% static 'i/loading.gif' %}" class="center-block"/>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% block content %}
+{% endblock %}
+<script>
+    window.MOBILE_DEEPLINK = "{{ MOBILE_DEEPLINK }}";
+    window.CSRF_TOKEN = "{{ csrf_token }}";
+    window.MOBILE_TOKEN = null;
+</script>
+<script src="{% static 'js/jquery-3.2.1.min.js' %}"></script>
+<script src="{% static 'js/jquery.validate.min.js' %}"></script>
+<script src="{% static 'js/jquery-ui.min.js' %}"></script>
+<script src="{% static 'js/qrcode.min.js' %}"></script>
+<script src="{% static 'js/mobile_auth.min.js' %}?v=2021072201"></script>
+{% bootstrap_javascript %}
+{% block js_block %}
+{% endblock %}
+</body>
+
+</html>

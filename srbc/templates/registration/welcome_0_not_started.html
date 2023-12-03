@@ -1,0 +1,27 @@
+{% extends 'registration/welcome.html' %}
+{% load static %}
+
+{% block include_css %}
+<link href="{% static 'css/mb-comingsoon.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+<div class="col-sm-12">
+    <h1 class="cursive">#SelfRebootCamp</h1>
+    <h2 class="sub">До открытия регистрации осталось совсем немного</h2>
+</div>
+<!-- countdown-->
+<div class="col-sm-12 centered text-center" id="countdown"></div>
+<!-- /.countdown-->
+<div class="col-sm-12 centered text-center">
+    <a href="/accounts/login/" style="color: white; font-size: 0.8em">Пустите меня, я уже зарегистрирован!</a>
+</div>
+{% endblock %}
+
+{% block include_js %}
+<script>
+    var REG_START_DATE = new Date({{ reg_date.0 }}, {{ reg_date.1|add:-1 }}, {{ reg_date.2 }}, {{ reg_date.3 }}, {{ reg_date.4 }}, {{ reg_date.5 }});
+</script>
+<script src="{% static 'js/jquery.mb-comingsoon.min.js' %}"></script>
+<script src="{% static 'js/welcome_0.js' %}"></script>
+{% endblock %}
